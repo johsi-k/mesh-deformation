@@ -4,8 +4,8 @@
 #include <sstream>
 #include <vector>
 #include "vecmath.h"
-
 #include <surface_mesh/Surface_mesh.h>
+
 
 using namespace std;
 using namespace surface_mesh;
@@ -361,6 +361,8 @@ using namespace surface_mesh;
 //
 //	return 0;	// This line is never reached.
 //}
+
+
 
 
 int main(int argc, char** argv)
