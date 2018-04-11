@@ -1,0 +1,3 @@
+﻿  main.cpp
+C:\Users\johsi\Downloads\zero\include\surface_mesh/Surface_mesh.h(1668): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+  zero.vcxproj -> C:\Users\johsi\Downloads\zero\Debug\zero.exe
