@@ -79,7 +79,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="deform_mesh.cpp" />
     <ClCompile Include="eqn13.cpp" />
+    <ClCompile Include="eqn14.cpp" />
     <ClCompile Include="eqn25.cpp" />
     <ClCompile Include="eqn6.cpp" />
     <ClCompile Include="main.cpp" />

@@ -72,6 +72,12 @@
     <ClCompile Include="eqn13.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="deform_mesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="eqn14.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\gl\freeglut.h">
