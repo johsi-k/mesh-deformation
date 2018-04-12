@@ -9,9 +9,10 @@
 
 using namespace std;
 using namespace surface_mesh;
-//
-//// Globals
-//
+
+
+// Globals
+
 //// This is the list of points (3D vectors)
 //vector<Vector3f> vecv;
 //
@@ -369,31 +370,9 @@ int main(int argc, char** argv)
 {
 	// instantiate a Surface_mesh object
 	Surface_mesh mesh;
+
 	// read a mesh specified as the first command line argument
 	mesh.read(argv[1]);
-	// ...
 
-	// do fancy stuff with the mesh
-	// ...
-
-	// smoothening test
-	/*Surface_mesh::Vertex_property <Point> points = mesh.get_vertex_property < Point >("v: point ");
-	Surface_mesh::Vertex_iterator vit,vend = mesh.vertices_end();
-	Surface_mesh::Vertex_around_vertex_circulator vc, vc_end;
-	for (vit = mesh.vertices_begin(); vit != vend; ++vit)
-	{
-		Point p(0, 0, 0);
-		Scalar c(0);
-		vc = vc_end = mesh.vertices(*vit);
-		do
-		{
-			p += points[*vc];
-			++c;
-		} while (++vc != vc_end);
-		points[*vit] = p / c;
-	}*/
-
-	// write the mesh to the file specified as second argument
-	mesh.write(argv[2]);
 	return 0;
 }
