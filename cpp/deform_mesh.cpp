@@ -1,19 +1,23 @@
 #include <Eigen/Eigen>
+#include <Eigen/StdVector>
 #include <surface_mesh/Surface_mesh.h>
 
-#include "eqn6.cpp"
-#include "eqn13.cpp"
-#include "eqn14.cpp"
-#include "eqn25.cpp"
-#include "eqn26.cpp"
+#include "..\headers\eqn6.h"
+#include "..\headers\eqn13.h"
+#include "..\headers\eqn14.h"
+#include "..\headers\eqn25.h"
+#include "..\headers\eqn26.h"
 
 using namespace surface_mesh;
 using namespace Eigen;
+using namespace std;
+
+Matrix3d get_scaling_matrix();
 
 Surface_mesh deform_mesh(const Surface_mesh *mesh0) {
 
-	const vector<Vector3f> p;
-	const vector<Vector3f> e1, e2, e3;
+	const vector<Vector3d> p;
+	const vector<Vector3d> e0_1, e0_2, e0_3;
 	const vector<float> A, B, C;
 
 	Vector4d *quat;
@@ -37,14 +41,19 @@ Surface_mesh deform_mesh(const Surface_mesh *mesh0) {
 		quat = &conformalParamsToQuaternion(conformal);
 	}
 
-	// TODO: apply rotation matrix to initial frames
 	const Matrix3d rotationMatrix = quaternion2rotationMatrix(*quat);
-
-	// TODO: apply scaling to rotated moving frames
 	const Matrix3d scaleMatrix = get_scaling_matrix();
+	const Matrix3d transformMatrix = rotationMatrix * scaleMatrix;
+
+	vector<Vector3d> e1_1, e1_2, e1_3;
+	for (int i = 0; i < e0_1.size(); i++) {
+		e1_1.push_back( ( transformMatrix * e0_1[i] ).cast<Vector3d>() );
+		e1_2.push_back( ( transformMatrix * e0_2[i] ).cast<Vector3d>() );
+		e1_3.push_back( ( transformMatrix * e0_3[i] ).cast<Vector3d>() );
+	}
 
 	Surface_mesh mesh1 = reconstruct_mesh(mesh0);
-	// vector<Vector3f> ~p = eqn14(A, B, C, ~e1, ~e2, ~e3)
+	// vector<Vector3f> ~p = eqn14(A, B, C, e1_1, e1_2, e1_3)
 
 	return mesh1;
 }

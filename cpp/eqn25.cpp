@@ -1,3 +1,4 @@
+#include "..\headers\eqn25.h"
 #include <Eigen\Eigen>
 
 using namespace Eigen;

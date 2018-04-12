@@ -1,4 +1,5 @@
 //code for eq 6
+#include "headers\eqn6.h"
 #include <Eigen/Eigen>
 #include <surface_mesh/Surface_mesh.h>
 
