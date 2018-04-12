@@ -63,6 +63,15 @@
     <ClCompile Include="eqn6.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="eqn26.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="eqn25.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="eqn13.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\gl\freeglut.h">

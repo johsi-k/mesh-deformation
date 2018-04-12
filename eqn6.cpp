@@ -4,6 +4,7 @@
 #include <surface_mesh/Surface_mesh.h>
 
 using namespace surface_mesh;
+using namespace Eigen;
 
 void
 eq(const Surface_mesh mesh,

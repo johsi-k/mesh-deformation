@@ -66,7 +66,8 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>C:\Users\johsi\Documents\eigen-eigen-5a0156e40feb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalUsingDirectories>%(AdditionalUsingDirectories)</AdditionalUsingDirectories>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -78,8 +79,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="eqn13.cpp" />
+    <ClCompile Include="eqn25.cpp" />
     <ClCompile Include="eqn6.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="eqn26.cpp" />
     <ClCompile Include="surface_mesh\IO.cpp" />
     <ClCompile Include="surface_mesh\IO_obj.cpp" />
     <ClCompile Include="surface_mesh\IO_off.cpp" />
