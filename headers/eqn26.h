@@ -2,10 +2,10 @@
 #ifndef EQN26
 #define EQN26
 
-#include <Eigen\Eigen>
+#include <Eigen\Geometry>
 
 using namespace Eigen;
 
-Matrix3d quaternion2rotationMatrix(Vector4d quaternion);
+Matrix3f quaternion2rotationMatrix(Vector4f quaternion);
 
 #endif

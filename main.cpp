@@ -5,11 +5,11 @@
 #include <vector>
 #include "vecmath.h"
 #include <surface_mesh/Surface_mesh.h>
+#include "..\headers\eqn6.h"
 
 
 using namespace std;
 using namespace surface_mesh;
-
 
 // Globals
 
@@ -373,6 +373,22 @@ int main(int argc, char** argv)
 
 	// read a mesh specified as the first command line argument
 	mesh.read(argv[1]);
+
+	// eqn 6 test
+	vector<int> fixed_ids;
+	vector<int> handle_ids;
+
+	for (int i = 0; i < 4; i++) {
+		fixed_ids.push_back(i);
+	}
+	
+	for (int i = 12; i < 16; i++) {
+		handle_ids.push_back(i);
+	}
+	
+	VectorXf init = VectorXf::Zero(mesh.vertices_size());
+	VectorXf out;
+	eqn6(mesh, fixed_ids, handle_ids, init, 0.52f, out);
 
 	return 0;
 }
