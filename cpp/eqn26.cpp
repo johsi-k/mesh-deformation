@@ -1,16 +1,16 @@
 #include "..\headers\eqn26.h"
-#include <Eigen\Eigen>
+#include <Eigen\Geometry>
 
 using namespace Eigen;
 
-Matrix3d quaternion2rotationMatrix(Vector4d quaternion) {
+Matrix3f quaternion2rotationMatrix(Vector4f quaternion) {
 
-	const double x = quaternion[0];
-	const double y = quaternion[1];
-	const double z = quaternion[2];
-	const double w = quaternion[3];
+	const float x = quaternion[0];
+	const float y = quaternion[1];
+	const float z = quaternion[2];
+	const float w = quaternion[3];
 
-	Matrix3d rotationMatrix;
+	Matrix3f rotationMatrix;
 	rotationMatrix <<
 		1 - 2*y*y - 2*z*z, 
 		2*x*y + 2*w*z, 

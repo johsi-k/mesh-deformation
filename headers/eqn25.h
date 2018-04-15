@@ -2,11 +2,11 @@
 #ifndef EQN25
 #define EQN25
 
-#include <Eigen\Eigen>
+#include <Eigen\Geometry>
 
 using namespace Eigen;
 
-Vector4d orthoParamsToQuarternion(Vector3d orthoParams);
-Vector4d conformalParamsToQuaternion(Vector3d conformalParams);
+Vector4f orthoParamsToQuarternion(Vector3f orthoParams);
+Vector4f conformalParamsToQuaternion(Vector3f conformalParams);
 
 #endif

@@ -16,6 +16,9 @@ Matrix3d get_scaling_matrix();
 
 Surface_mesh deform_mesh(const Surface_mesh *mesh0) {
 
+	const MatrixX3f PD1, PD2;
+	//const MatrixX1f PV1, PV2;
+
 	const vector<Vector3d> p;
 	const vector<Vector3d> e0_1, e0_2, e0_3;
 	const vector<float> A, B, C;
