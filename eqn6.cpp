@@ -89,7 +89,7 @@ void eqn6(const Surface_mesh& mesh, vector<int>& fixed_ids, vector<int>& handle_
 	MatrixType A;
 	A.resize(nv, nv);
 	A.setFromTriplets(entries.begin(), entries.end());
-
+	
 	//build b
 	VectorXf b = VectorXf::Zero(A.cols());
 	for (auto i : fixed_ids) {

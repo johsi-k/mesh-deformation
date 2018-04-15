@@ -42,19 +42,7 @@
     <ClCompile Include="eqn6.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cpp\eqn13.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cpp\eqn14.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cpp\eqn25.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cpp\eqn26.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cpp\deform_mesh.cpp">
+    <ClCompile Include="cpp\DeformableMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -926,16 +914,7 @@
     <ClInclude Include="headers\eqn6.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="headers\eqn13.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="headers\eqn14.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="headers\eqn25.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="headers\eqn26.h">
+    <ClInclude Include="headers\DeformableMesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
