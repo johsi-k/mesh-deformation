@@ -6,6 +6,6 @@
 
 using namespace surface_mesh;
 
-Surface_mesh reconstruct_mesh(const Surface_mesh *original);
+void reconstruct_mesh(const Surface_mesh *original, Surface_mesh out);
 
 #endif

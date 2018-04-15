@@ -93,13 +93,6 @@
     <ClCompile Include="surface_mesh\IO_stl.cpp" />
     <ClCompile Include="surface_mesh\Surface_mesh.cpp" />
     <ClCompile Include="surface_mesh\tinyply.cpp" />
-    <ClCompile Include="vecmath\Matrix2f.cpp" />
-    <ClCompile Include="vecmath\Matrix3f.cpp" />
-    <ClCompile Include="vecmath\Matrix4f.cpp" />
-    <ClCompile Include="vecmath\Quat4f.cpp" />
-    <ClCompile Include="vecmath\Vector2f.cpp" />
-    <ClCompile Include="vecmath\Vector3f.cpp" />
-    <ClCompile Include="vecmath\Vector4f.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers\eqn13.h" />

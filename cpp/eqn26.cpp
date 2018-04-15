@@ -1,8 +1,6 @@
 #include "..\headers\eqn26.h"
 #include <Eigen\Geometry>
 
-using namespace Eigen;
-
 Matrix3f quaternion2rotationMatrix(Vector4f quaternion) {
 
 	const float x = quaternion[0];

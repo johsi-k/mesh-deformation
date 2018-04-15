@@ -31,7 +31,7 @@
 
 namespace surface_mesh {
 
-typedef double Scalar;
+typedef float Scalar;
 
 //=============================================================================
 typedef Eigen::Vector3i Indices; ///< vertex indices of a face
