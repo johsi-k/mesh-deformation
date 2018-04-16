@@ -15,7 +15,7 @@ class DeformableMesh
 
 public:
 
-	DeformableMesh(Surface_mesh &mesh);
+	//DeformableMesh(Surface_mesh &mesh);
 
 	Surface_mesh &mesh;
 

@@ -82,6 +82,7 @@
     <ClCompile Include="cpp\DeformableMesh.cpp" />
     <ClCompile Include="eqn6.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="camera.cpp" />
     <ClCompile Include="surface_mesh\IO.cpp" />
     <ClCompile Include="surface_mesh\IO_obj.cpp" />
     <ClCompile Include="surface_mesh\IO_off.cpp" />
@@ -91,6 +92,8 @@
     <ClCompile Include="surface_mesh\tinyply.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="camera.h" />
+    <ClInclude Include="extra.h" />
     <ClInclude Include="headers\DeformableMesh.h" />
     <ClInclude Include="headers\eqn6.h" />
     <ClInclude Include="include\Eigen\src\Cholesky\LDLT.h" />
@@ -373,14 +376,8 @@
     <ClInclude Include="include\surface_mesh\tinyply.h" />
     <ClInclude Include="include\surface_mesh\types.h" />
     <ClInclude Include="include\surface_mesh\Vector.h" />
-    <ClInclude Include="include\vecmath\Matrix2f.h" />
-    <ClInclude Include="include\vecmath\Matrix3f.h" />
-    <ClInclude Include="include\vecmath\Matrix4f.h" />
-    <ClInclude Include="include\vecmath\Quat4f.h" />
-    <ClInclude Include="include\vecmath\vecmath.h" />
-    <ClInclude Include="include\vecmath\Vector2f.h" />
-    <ClInclude Include="include\vecmath\Vector3f.h" />
-    <ClInclude Include="include\vecmath\Vector4f.h" />
+    <ClInclude Include="Object3D.h" />
+    <ClInclude Include="Ray.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.12.25827\include\cassert" />
