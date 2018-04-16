@@ -7,11 +7,12 @@
 #include "camera.h"
 #include <Eigen/Geometry>
 #include <surface_mesh/Surface_mesh.h>
+#include "..\headers\eqn6.h"
+
 
 using namespace std;
 using namespace surface_mesh;
 using namespace Eigen;
-// Globals
 
 //Surface mesh and related color array
 Surface_mesh mesh;
@@ -492,13 +493,31 @@ void loadInput(int argc, char **argv)
 	}
 }
 
+//Function to deform the vertices (DOM & JOHSI, yall do stuff here)
+void deform() {
+	vector<int> fixed_ids;
+	vector<int> handle_ids;
+
+	for (int i = 0; i < 4; i++) {
+		fixed_ids.push_back(i);
+	}
+	
+	for (int i = 12; i < 16; i++) {
+		handle_ids.push_back(i);
+	}
+	
+	VectorXf init = VectorXf::Zero(mesh.vertices_size());
+	VectorXf out;
+	eqn6(mesh, fixed_ids, handle_ids, init, 0.52f, out);
+}
+
 
 // Main routine.
 // Set up OpenGL, define the callbacks and start the main loop
 int main(int argc, char** argv)
 {
 	loadInput(argc,argv);
-
+	deform();
 	glutInit(&argc, argv);
 
 	// We're going to animate it, so double buffer 

@@ -43,6 +43,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="camera.cpp">
+    <ClCompile Include="cpp\DeformableMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -72,6 +73,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\surface_mesh\Vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="extra.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Object3D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Ray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Hit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Eigen\src\Cholesky\LDLT.h">
@@ -887,27 +903,47 @@
     <ClInclude Include="include\Eigen\src\UmfPackSupport\UmfPackSupport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="camera.h">
+    <ClInclude Include="headers\eqn6.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="extra.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Object3D.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Ray.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Hit.h">
+    <ClInclude Include="headers\DeformableMesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.12.25827\include\cassert" />
     <None Include="freeglut.dll" />
-    <None Include="Makefile" />
-    <None Include="include\Eigen\QtAlignedMalloc" />
+    <None Include="include\Eigen\Cholesky" />
+    <None Include="include\Eigen\CholmodSupport" />
+    <None Include="include\Eigen\Core" />
+    <None Include="include\Eigen\Dense" />
+    <None Include="include\Eigen\Eigen" />
+    <None Include="include\Eigen\Eigenvalues" />
     <None Include="include\Eigen\Geometry" />
+    <None Include="include\Eigen\Householder" />
+    <None Include="include\Eigen\IterativeLinearSolvers" />
+    <None Include="include\Eigen\Jacobi" />
+    <None Include="include\Eigen\LU" />
+    <None Include="include\Eigen\MetisSupport" />
+    <None Include="include\Eigen\OrderingMethods" />
+    <None Include="include\Eigen\PardisoSupport" />
+    <None Include="include\Eigen\PaStiXSupport" />
+    <None Include="include\Eigen\QR" />
+    <None Include="include\Eigen\QtAlignedMalloc" />
+    <None Include="include\Eigen\Sparse" />
+    <None Include="include\Eigen\SparseCholesky" />
+    <None Include="include\Eigen\SparseCore" />
+    <None Include="include\Eigen\SparseLU" />
+    <None Include="include\Eigen\SparseQR" />
+    <None Include="include\Eigen\SPQRSupport" />
+    <None Include="include\Eigen\StdDeque" />
+    <None Include="include\Eigen\StdList" />
+    <None Include="include\Eigen\StdVector" />
+    <None Include="include\Eigen\SuperLUSupport" />
+    <None Include="include\Eigen\SVD" />
+    <None Include="include\Eigen\UmfPackSupport" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="include\Eigen\CMakeLists.txt" />
   </ItemGroup>
 </Project>

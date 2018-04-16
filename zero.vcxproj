@@ -66,7 +66,8 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>D:\ISTD 2018\50.017\mesh-deformation\vecmath;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalUsingDirectories>%(AdditionalUsingDirectories)</AdditionalUsingDirectories>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -78,6 +79,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="cpp\DeformableMesh.cpp" />
     <ClCompile Include="eqn6.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="camera.cpp" />
@@ -93,6 +95,8 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="extra.h" />
     <ClInclude Include="Hit.h" />
+    <ClInclude Include="headers\DeformableMesh.h" />
+    <ClInclude Include="headers\eqn6.h" />
     <ClInclude Include="include\Eigen\src\Cholesky\LDLT.h" />
     <ClInclude Include="include\Eigen\src\Cholesky\LLT.h" />
     <ClInclude Include="include\Eigen\src\Cholesky\LLT_LAPACKE.h" />
@@ -379,9 +383,38 @@
   <ItemGroup>
     <None Include="..\..\..\..\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.12.25827\include\cassert" />
     <None Include="freeglut.dll" />
+    <None Include="include\Eigen\Cholesky" />
+    <None Include="include\Eigen\CholmodSupport" />
+    <None Include="include\Eigen\Core" />
+    <None Include="include\Eigen\Dense" />
+    <None Include="include\Eigen\Eigen" />
+    <None Include="include\Eigen\Eigenvalues" />
     <None Include="include\Eigen\Geometry" />
+    <None Include="include\Eigen\Householder" />
+    <None Include="include\Eigen\IterativeLinearSolvers" />
+    <None Include="include\Eigen\Jacobi" />
+    <None Include="include\Eigen\LU" />
+    <None Include="include\Eigen\MetisSupport" />
+    <None Include="include\Eigen\OrderingMethods" />
+    <None Include="include\Eigen\PardisoSupport" />
+    <None Include="include\Eigen\PaStiXSupport" />
+    <None Include="include\Eigen\QR" />
     <None Include="include\Eigen\QtAlignedMalloc" />
-    <None Include="Makefile" />
+    <None Include="include\Eigen\Sparse" />
+    <None Include="include\Eigen\SparseCholesky" />
+    <None Include="include\Eigen\SparseCore" />
+    <None Include="include\Eigen\SparseLU" />
+    <None Include="include\Eigen\SparseQR" />
+    <None Include="include\Eigen\SPQRSupport" />
+    <None Include="include\Eigen\StdDeque" />
+    <None Include="include\Eigen\StdList" />
+    <None Include="include\Eigen\StdVector" />
+    <None Include="include\Eigen\SuperLUSupport" />
+    <None Include="include\Eigen\SVD" />
+    <None Include="include\Eigen\UmfPackSupport" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="include\Eigen\CMakeLists.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
