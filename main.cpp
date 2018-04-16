@@ -364,31 +364,36 @@ using namespace surface_mesh;
 //}
 
 
-
+#include "headers\DeformableMesh.h"
 
 int main(int argc, char** argv)
 {
-	// instantiate a Surface_mesh object
 	Surface_mesh mesh;
+	mesh.read("plane_4x4.obj");
+	DeformableMesh dm = DeformableMesh(mesh);
+	dm.test();
 
-	// read a mesh specified as the first command line argument
-	mesh.read(argv[1]);
+	//// instantiate a Surface_mesh object
+	//Surface_mesh mesh;
 
-	// eqn 6 test
-	vector<int> fixed_ids;
-	vector<int> handle_ids;
+	//// read a mesh specified as the first command line argument
+	//mesh.read(argv[1]);
 
-	for (int i = 0; i < 4; i++) {
-		fixed_ids.push_back(i);
-	}
-	
-	for (int i = 12; i < 16; i++) {
-		handle_ids.push_back(i);
-	}
-	
-	VectorXf init = VectorXf::Zero(mesh.vertices_size());
-	VectorXf out;
-	eqn6(mesh, fixed_ids, handle_ids, init, 0.52f, out);
+	//// eqn 6 test
+	//vector<int> fixed_ids;
+	//vector<int> handle_ids;
+
+	//for (int i = 0; i < 4; i++) {
+	//	fixed_ids.push_back(i);
+	//}
+	//
+	//for (int i = 12; i < 16; i++) {
+	//	handle_ids.push_back(i);
+	//}
+	//
+	//VectorXf init = VectorXf::Zero(mesh.vertices_size());
+	//VectorXf out;
+	//eqn6(mesh, fixed_ids, handle_ids, init, 0.52f, out);
 
 	return 0;
 }

@@ -1,8 +1,25 @@
 #include "..\headers\DeformableMesh.h"
 #include "..\headers\eqn6.h"
 
-DeformableMesh::DeformableMesh(Surface_mesh &mesh) {
-	this->_original = mesh;
+DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh( *(new Surface_mesh(mesh)) ) {
+
+	for (auto e : _original.edges()) {
+		Matrix3f m_frame = Matrix3f();
+		m_frame <<
+			1.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 1.0f;
+
+		this->frame_rotated.push_back(m_frame); 
+
+		Point p0 = _original.position(_original.vertex(e, 0));
+		Point p1 = _original.position(_original.vertex(e, 1));
+		Point p = p1 - p0;
+
+		Vector3f ve = p.matrix();
+		this->coeffs.push_back(ve);
+	}
+
 }
 
 void DeformableMesh::deform_mesh(const Surface_mesh *mesh0) {
@@ -34,16 +51,13 @@ void DeformableMesh::deform_mesh(const Surface_mesh *mesh0) {
 	}
 
 	const Matrix3f rotationMatrix = quaternion2rotationMatrix(*quat);
-	for (int i = 0; i < e0_1.size(); i++) {
-		this->e1_1[i] = rotationMatrix * this->e0_1[i];
-		this->e1_2[i] = rotationMatrix * this->e0_2[i];
-		this->e1_3[i] = rotationMatrix * this->e0_3[i];
+	for (int i = 0; i < _original.vertices_size(); i++) {
+		this->frame_rotated[i] = rotationMatrix * this->frame_origin[i];
 	}
 
-	//const Matrix3f scaleMatrix = get_scaling_matrix();
+	const Matrix3f scaleMatrix = get_scaling_matrix();
 
 	reconstruct_mesh();
-	// vector<Vector3f> ~p = eqn14(A, B, C, e1_1, e1_2, e1_3)
 
 }
 
@@ -57,63 +71,69 @@ void DeformableMesh::reconstruct_mesh() {
 	const int ne = _original.edges_size();
 	const int nv = _original.vertices_size();
 	vector<Triplet> A_entries; // i, j, value
-	vector<float>   b_entries;
 
-	int n = 0;
+	MatrixX3f b(ne, 3);
 
 	for (auto edge : _original.edges()) {
+
 		int v0 = _original.vertex(edge, 0).idx();
 		int v1 = _original.vertex(edge, 1).idx();
 
+		int eid = edge.idx();
+
 		// A
-		A_entries.push_back(Triplet(n, v0,  1));
-		A_entries.push_back(Triplet(n, v1, -1));
+		A_entries.push_back(Triplet(eid, v0, -1));
+		A_entries.push_back(Triplet(eid, v1,  1));
 
-		A_entries.push_back(Triplet(n + 1, v0,  1));
-		A_entries.push_back(Triplet(n + 1, v1, -1));
-
-		A_entries.push_back(Triplet(n + 2, v0,  1));
-		A_entries.push_back(Triplet(n + 2, v1, -1));
-
-		// b
-		b_entries.push_back(
-			this->A[v0] * e1_1[v0].x() + 
-			this->B[v0] * e1_2[v0].x() +
-			this->C[v0] * e1_3[v0].x()
-		);
-		b_entries.push_back(
-			this->A[v0] * e1_1[v0].y() +
-			this->B[v0] * e1_2[v0].y() +
-			this->C[v0] * e1_3[v0].y()
-		);
-		b_entries.push_back(
-			this->A[v0] * e1_1[v0].z() +
-			this->B[v0] * e1_2[v0].z() +
-			this->C[v0] * e1_3[v0].z()
-		);
-
-		n += 3;
+		b.row(eid) = this->frame_rotated[eid] * this->coeffs[eid];
 	}
 
 	MatrixType A(ne, nv);
-	VectorXf b = VectorXf::Zero(nv);
-	VectorXf x;
-
 	A.setFromTriplets(A_entries.begin(), A_entries.end());
-	
-	for (int i = 0; i < nv; i++) {
-		b[i] = b_entries[nv];
-	}
+	const MatrixType At = A.transpose();
+	const MatrixType AA = At * A;
+
+	const VectorXf bx = At * b.col(0);
+	const VectorXf by = At * b.col(1);
+	const VectorXf bz = At * b.col(2);
 
 	//solve linear system
 	SolverType solver;
-	solver.compute(A);
-	x = solver.solve(b);
+	solver.compute(AA);
+	const VectorXf x = solver.solve(bx);
+	const VectorXf y = solver.solve(by);
+	const VectorXf z = solver.solve(bz);
 
 	std::cout << A << std::endl;
+	std::cout << AA << std::endl;
+	
+	cout << "original | new" << endl;
+	int i = 0;
+	for (auto v : _original.vertices()) {
+		Point p = _original.position(v);
+		cout << i << ": " << p.x() << ", " << p.y() << ", " << p.z()
+			<< " | " << x[i] << ", " << y[i] << ", " << z[i]
+			<< endl;
 
-	std::cout << "result" << std::endl;
-	std::cout << x.transpose() << std::endl;
+		mesh.position(v) = Vector3f(x[i], y[i], z[i]);
+		i++;
+	}
+
+	i = 0;
+	cout << "_original" << endl;
+	for (auto v : _original.vertices()) {
+		Point p = _original.position(v);
+		cout << i << ": " << p.x() << ", " << p.y() << ", " << p.z() << endl;
+		i++;
+	}
+
+	i = 0;
+	cout << "mesh" << endl;
+	for (auto v : mesh.vertices()) {
+		Point p = mesh.position(v);
+		cout << i << ": " << p.x() << ", " << p.y() << ", " << p.z() << endl;
+		i++;
+	}
 }
 
 float DeformableMesh::get_h_field(float t) {
@@ -140,7 +160,7 @@ Matrix3f DeformableMesh::get_scaling_matrix() {
 
 	const float s = sqrt(h0 / h1);
 
-	return Scaling(s, s, s);
+	return Scaling(1.0f, 1.0f, s);
 
 }
 
