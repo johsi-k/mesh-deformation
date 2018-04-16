@@ -14,7 +14,7 @@ class DeformableMesh
 
 public:
 
-	DeformableMesh(Surface_mesh &mesh);
+	//DeformableMesh(Surface_mesh &mesh);
 
 	void deform_mesh(const Surface_mesh *mesh0);
 

@@ -1,7 +1,6 @@
 #include "camera.h"
 #include "extra.h"
 #include <GL/glu.h>
-#include <Eigen\Geometry>
 #include <iostream>
 
 using namespace std;

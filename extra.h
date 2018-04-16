@@ -5,15 +5,14 @@
 #include <windows.h>
 #endif
 #include <GL/gl.h>
-#include <Eigen/Geometry>
-
+#include <Eigen\Geometry>
 #ifndef M_PI
 #define M_PI  3.14159265358979
 #endif
 
 using namespace Eigen;
 
-
+// Inline functions to help with drawing
 inline void glMultMatrix( const Matrix4f& m )
 {
     glMultMatrixf( m.data() );

@@ -94,7 +94,6 @@
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="extra.h" />
-    <ClInclude Include="Hit.h" />
     <ClInclude Include="headers\DeformableMesh.h" />
     <ClInclude Include="headers\eqn6.h" />
     <ClInclude Include="include\Eigen\src\Cholesky\LDLT.h" />

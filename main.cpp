@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vector>
 #include "extra.h"
+#include "Ray.h"
 #include "camera.h"
 #include <Eigen/Geometry>
 #include <surface_mesh/Surface_mesh.h>

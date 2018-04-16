@@ -1,9 +1,9 @@
 #include "..\headers\DeformableMesh.h"
 #include "..\headers\eqn6.h"
 
-DeformableMesh::DeformableMesh(Surface_mesh &mesh) {
-	this->_original = mesh;
-}
+//DeformableMesh::DeformableMesh(Surface_mesh &mesh) {
+//	this->_original = mesh;
+//}
 
 void DeformableMesh::deform_mesh(const Surface_mesh *mesh0) {
 
