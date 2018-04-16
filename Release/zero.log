@@ -1,6 +1,0 @@
-﻿  DeformableMesh.cpp
-c:\users\dominic\desktop\projects\github\mesh-deformation\cpp\deformablemesh.cpp(39): warning C4018: '<': signed/unsigned mismatch
-c:\users\dominic\desktop\projects\github\mesh-deformation\cpp\deformablemesh.cpp(80): warning C4723: potential divide by 0
-c:\users\dominic\desktop\projects\github\mesh-deformation\cpp\deformablemesh.cpp(80): warning C4723: potential divide by 0
-LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/OPT:ICF' specification
-  zero.vcxproj -> C:\Users\Dominic\Desktop\Projects\GitHub\mesh-deformation\Release\zero.exe
