@@ -24,7 +24,7 @@ int hoveredTriangleIndex = INT_MAX;
 
 //States to select triangles for mesh deformation or rotate them
 bool isModeDeformedSelection = false;
-bool isModeInterpolationSelection = false;
+bool isModeFixedSelecton = false;
 bool isModeRotateX = false;
 bool isModeRotateY = false;
 bool isModeRotateZ = false;
@@ -36,7 +36,8 @@ int zAxisAngle = 0;
 
 //Vectors to store triangles currently listed for deformation
 vector<int> deformedSelectionTriangles;
-vector<int> interpolationSelectionTriangles;
+vector<int> fixedSelectionTriangles;
+void deform(Vector3f angles);
 
 // You will need more global variables to implement color and position changes
 int colorCounter = 0;
@@ -94,7 +95,6 @@ void displayString(float x, float y, string &text, Vector3f color) {
 void rotate(Vector3f angle) {
 
 }
-
 
 //Function to monitor rotation
 void setAngleForRotation(int incr) {
@@ -154,16 +154,16 @@ void passiveMouseFunc(int x, int y) {
 	if (hoveredTriangleIndex < INT_MAX) {
 		if (isModeDeformedSelection) {
 			if (std::find(deformedSelectionTriangles.begin(), deformedSelectionTriangles.end(), hoveredTriangleIndex) == deformedSelectionTriangles.end()) {
-				if (std::find(interpolationSelectionTriangles.begin(), interpolationSelectionTriangles.end(), hoveredTriangleIndex) == interpolationSelectionTriangles.end()) {
+				if (std::find(fixedSelectionTriangles.begin(), fixedSelectionTriangles.end(), hoveredTriangleIndex) == fixedSelectionTriangles.end()) {
 					deformedSelectionTriangles.push_back(hoveredTriangleIndex);
 					colors[hoveredTriangleIndex] = Vector3f(0, 0, 1);
 				}
 			}
 		}
-		else if (isModeInterpolationSelection) {
-			if (std::find(interpolationSelectionTriangles.begin(), interpolationSelectionTriangles.end(), hoveredTriangleIndex) == interpolationSelectionTriangles.end()) {
+		else if (isModeFixedSelecton) {
+			if (std::find(fixedSelectionTriangles.begin(), fixedSelectionTriangles.end(), hoveredTriangleIndex) == fixedSelectionTriangles.end()) {
 				if (std::find(deformedSelectionTriangles.begin(), deformedSelectionTriangles.end(), hoveredTriangleIndex) == deformedSelectionTriangles.end()) {
-					interpolationSelectionTriangles.push_back(hoveredTriangleIndex);
+					fixedSelectionTriangles.push_back(hoveredTriangleIndex);
 					colors[hoveredTriangleIndex] = Vector3f(0, 1, 0);
 				}
 			}
@@ -217,16 +217,19 @@ void keyboardUpFunc(unsigned char key, int x, int y) {
 		isModeDeformedSelection = false;
 		break;
 	case 'i':
-		isModeInterpolationSelection = false;
+		isModeFixedSelecton = false;
 		break;
 	case 'x':
 		isModeRotateX = false;
+		deform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
 		break;
 	case 'y':
 		isModeRotateY = false;
+		deform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
 		break;
 	case 'z':
 		isModeRotateZ = false;
+		deform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
 		break;
 	}
 }
@@ -240,17 +243,17 @@ void keyboardFunc(unsigned char key, int x, int y)
 		break;
 	case 'r':
 		deformedSelectionTriangles.clear();
-		interpolationSelectionTriangles.clear();
+		fixedSelectionTriangles.clear();
 
 		for (int i = 0; i < colors.size(); i++) {
 			colors[i] = Vector3f(0.7, 0.7, 0.7);
 		}
 		break;
 	case 'd':
-		isModeDeformedSelection = isModeInterpolationSelection ? false : true;
+		isModeDeformedSelection = isModeFixedSelecton ? false : true;
 		break;
 	case 'i':
-		isModeInterpolationSelection = isModeDeformedSelection ? false : true;
+		isModeFixedSelecton = isModeDeformedSelection ? false : true;
 		break;
 	case 'x':
 		isModeRotateX = true;
@@ -392,15 +395,15 @@ void drawScene(void)
 	int f_i = 0;
 
 	for (face_iter = deformableMesh->mesh.faces_begin(); face_iter != mesh->faces_end(); ++face_iter) {
-		vafc = deformableMesh->mesh.vertices(*face_iter);
+		vafc = mesh->vertices(*face_iter);
 		vafc_end = vafc;
 
 		glBegin(GL_TRIANGLES);
 
 		do {
 			Surface_mesh::Vertex v = *vafc;
-			Vector3f p = deformableMesh->mesh.position(v);
-			Vector3f n = deformableMesh->mesh.compute_vertex_normal(v);
+			Vector3f p = mesh->position(v);
+			Vector3f n = mesh->compute_vertex_normal(v);
 
 			glNormal3d(n.x(),n.y(), n.z());
 			if (hoveredTriangleIndex == f_i) {
@@ -424,7 +427,7 @@ void drawScene(void)
 	displayString(-0.9, 0.75, "Y " + to_string(yAxisAngle),Vector3f(1,1,1));
 	displayString(-0.9, 0.65, "Z " + to_string(zAxisAngle),Vector3f(1,1,1));
 	displayString(-0.9, -0.75, "Handles " + to_string(deformedSelectionTriangles.size()),Vector3f(0,0,1));
-	displayString(-0.9, -0.85, "Deformed " + to_string(interpolationSelectionTriangles.size()),Vector3f(0,1,0));
+	displayString(-0.9, -0.85, "Fixed " + to_string(fixedSelectionTriangles.size()),Vector3f(0,1,0));
 
 	glPushMatrix();
 	glTranslated(camera.GetCenter().x(), camera.GetCenter().y(), camera.GetCenter().z());
@@ -505,6 +508,44 @@ void loadInput(int argc, char **argv)
 	}
 }
 
+//Function to deform the vertices (DOM & JOHSI, yall do stuff here)
+void deform(Vector3f angles) {
+	vector<int> fixed_ids;
+	vector<int> handle_ids;
+
+	Surface_mesh::Face_container container = deformableMesh->mesh.faces();
+	Surface_mesh::Face_iterator face_iter;
+	Surface_mesh::Vertex_around_face_circulator vafc, vafc_end;
+	int f_i = 0;
+
+	for (face_iter = deformableMesh->mesh.faces_begin(); face_iter != mesh->faces_end(); ++face_iter) {
+
+		vafc = mesh->vertices(*face_iter);
+		vafc_end = vafc;
+
+		if (find(deformedSelectionTriangles.begin(), deformedSelectionTriangles.end(), f_i) != deformedSelectionTriangles.end()) {
+			do {
+				Surface_mesh::Vertex v = *vafc;
+				fixed_ids.push_back(v.idx());
+
+			} while (++vafc != vafc_end);
+		}
+
+		if (find(fixedSelectionTriangles.begin(), fixedSelectionTriangles.end(), f_i) != fixedSelectionTriangles.end()) {
+			do {
+				Surface_mesh::Vertex v = *vafc;
+				handle_ids.push_back(v.idx());
+
+			} while (++vafc != vafc_end);
+		}
+
+		f_i++;
+	}
+	
+	VectorXf init = VectorXf::Zero(mesh->vertices_size());
+	VectorXf out;
+	//eqn6(mesh, fixed_ids, handle_ids, init, 0.52f, out);
+}
 
 // Main routine.
 // Set up OpenGL, define the callbacks and start the main loop
