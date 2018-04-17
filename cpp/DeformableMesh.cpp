@@ -3,8 +3,10 @@
 #include <cmath>
 
 #include "..\headers\DeformableMesh.h"
-#include "igl\principal_curvature.h";
-
+#include "..\headers\TriangleIntersect.h"
+#include "igl\principal_curvature.h"
+#include <algorithm>
+#include "..\Ray.h"
 
 Vector3f global_to_local(const Vector3f& global,
 	const Vector3f& origin,
@@ -470,4 +472,28 @@ Vector4f DeformableMesh::conformalParamsToQuaternion(Vector3f conformalParams) {
 	const float w = (4 - n_abs_sqr) * denom;
 
 	return Vector4f(x, y, z, w);
+}
+
+float truncFloat(float x) {
+	return x <= 0 ? FLT_MAX : x;
+}
+
+vector<float> DeformableMesh::computeInternalDistances() {
+
+	vector<float> distances;
+	const float alpha = 0.5;
+	const float beta = 0.5;
+	const float r1 = FLT_MAX;
+	const float r2 = FLT_MAX;
+
+	for (auto v : _original.vertices()) {
+		Vector3f inwardsRay = (Vector3f)-this->frame_rotated[v.idx()].row(2);
+		Ray r(_original.position(v), inwardsRay);
+		float dist;
+		TriangleIntersect::intersect(r, 0.01, dist, &mesh);
+		float phi_p = min(min(alpha*dist, beta*r1), beta*r2);
+		distances.push_back(phi_p);
+	}
+
+	return distances;
 }

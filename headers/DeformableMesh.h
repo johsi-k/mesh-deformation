@@ -39,6 +39,7 @@ private:
 	MatrixX4f orthoParamsToQuarternion(MatrixX3f orthoParams);
 	Vector4f orthoParamsToQuarternion(Vector3f orthoParams);
 	Vector4f conformalParamsToQuaternion(Vector3f conformalParams);
+	vector<float> computeInternalDistances();
 
 };
 
