@@ -1,8 +1,11 @@
 #define EIGEN_DONT_ALIGN
+#define _USE_MATH_DEFINES
+#include <cmath>
 
 #include "..\headers\DeformableMesh.h"
 #include "..\headers\eqn6.h"
 #include "igl\principal_curvature.h";
+
 
 Vector3f global_to_local(const Vector3f& global,
 	const Vector3f& origin,
@@ -36,7 +39,6 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh( *(ne
 
 	}
 
-
 	MatrixX3f PD1, PD2;
 	VectorXf PV1, PV2;
 
@@ -62,44 +64,64 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh( *(ne
 		this->frame_rotated.push_back(m_frame);
 	}
 
+	vector<int> fixed_ids;
+	vector<int> handle_ids;
+	VectorXf theta_initial;
+	float theta_input;
+
+	fixed_ids.push_back(0);
+	fixed_ids.push_back(1);
+	fixed_ids.push_back(2);
+	fixed_ids.push_back(3);
+
+	handle_ids.push_back(12);
+	handle_ids.push_back(13);
+	handle_ids.push_back(14);
+	handle_ids.push_back(15);
+
+	theta_initial = VectorXf::Zero(mesh.vertices_size());
+	theta_input = 30*M_PI/180;
+
+
+	deform_mesh(fixed_ids, handle_ids, theta_initial, theta_input);
 }
 
-void DeformableMesh::deform_mesh(const Surface_mesh *mesh0) {
-
-	const MatrixX3f PD1, PD2;
-	const VectorXf PV1, PV2;
-
+void DeformableMesh::deform_mesh(
+	vector<int> fixed_ids, 
+	vector<int> handle_ids, 
+	VectorXf theta_initial, 
+	float theta_input
+) 
+{
+	cout << "fixed_ids size: " << fixed_ids.size() << "handle_ids size: " << handle_ids.size() << endl;
+	cout << "initial theta:" << endl << theta_initial << endl;
+	cout << "theta_input: " << endl << theta_input << endl;
 	const vector<Vector3f> p;
 
-	Vector4f *quat;
+	MatrixX3f params(_original.vertices_size(), 3);
 	bool is_one_axis = true;
 
 	if (is_one_axis) {
-		vector<int> fixed_ids;
-		vector<int> handle_ids;
-		VectorXf theta_initial;
-		float theta_input;
 		VectorXf ortho;
 
-		eqn6(*mesh0, fixed_ids, handle_ids, theta_initial, theta_input, ortho);
+		eqn6(_original, fixed_ids, handle_ids, theta_initial, theta_input, ortho);
 
-		quat = &orthoParamsToQuarternion(ortho);
+		params.col(0) = ortho;
 	}
 	else {
-		Vector3f conformal;
 		// eq2(*mesh0, conformal);
-
-		quat = &conformalParamsToQuaternion(conformal);
 	}
 
-	const Matrix3f rotationMatrix = quaternion2rotationMatrix(*quat);
+	const MatrixX4f quat = orthoParamsToQuarternion(params);
+
 	for (int i = 0; i < _original.vertices_size(); i++) {
+		const Matrix3f rotationMatrix = quaternion2rotationMatrix(quat.row(i));
 		this->frame_rotated[i] = rotationMatrix * this->frame_origin[i];
 	}
 
-	const Matrix3f scaleMatrix = get_scaling_matrix();
+	////const Matrix3f scaleMatrix = get_scaling_matrix();
 
-	reconstruct_mesh();
+	reconstruct_mesh(fixed_ids);
 
 }
 
@@ -108,7 +130,7 @@ bool contains(const vector<T> &v, T t) {
 	return std::find(v.begin(), v.end(), t) != v.end();
 }
 
-void DeformableMesh::reconstruct_mesh() {
+void DeformableMesh::reconstruct_mesh( vector<int> fixed_ids ) {
 
 	typedef SparseMatrix<float> MatrixType;
 	typedef SparseLU< MatrixType > SolverType;
@@ -117,12 +139,6 @@ void DeformableMesh::reconstruct_mesh() {
 
 	const int nv = _original.vertices_size();
 	vector<Triplet> A_entries; // i, j, value
-	vector<int> fixed_ids(4);
-
-	fixed_ids.push_back(0);
-	fixed_ids.push_back(1);
-	fixed_ids.push_back(2);
-	fixed_ids.push_back(3);
 
 	vector<Surface_mesh::Edge> new_edges;
 
@@ -145,6 +161,19 @@ void DeformableMesh::reconstruct_mesh() {
 	const int ne = new_edges.size();
 	MatrixX3f b(ne, 3);
 
+	vector<int> lookup;
+
+	int j = 0;
+	for (int i = 0; i < _original.vertices_size(); i++) {
+		if (contains(fixed_ids, i)) {
+			lookup.push_back(-1);
+		} else
+		{
+			lookup.push_back(j);
+			j++;
+		}
+	}
+
 	int eid = 0;
 	for (Surface_mesh::Edge edge : new_edges) {
 
@@ -162,10 +191,10 @@ void DeformableMesh::reconstruct_mesh() {
 		Vector3f b_row = this->frame_rotated[v1_idx] * global_to_local(p1, p0, this->frame_origin[v1_idx]);
 		
 		if (is_v0_fixed) b_row += _original.position(v0);
-		else             A_entries.push_back(Triplet(eid, v0_idx - 4, -1));
+		else             A_entries.push_back(Triplet(eid, lookup[v0_idx], -1));
 
 		if (is_v1_fixed) b_row -= _original.position(v1);
-		else             A_entries.push_back(Triplet(eid, v1_idx - 4, 1));
+		else             A_entries.push_back(Triplet(eid, lookup[v1_idx], 1));
 
 		b.row(eid) = b_row;
 		eid++;
@@ -195,13 +224,24 @@ void DeformableMesh::reconstruct_mesh() {
 	
 	cout << "original | new" << endl;
 	int i = 0;
+	j = 0;
 	for (auto v : _original.vertices()) {
 		Point p = _original.position(v);
-		cout << i << ": " << p.x() << ", " << p.y() << ", " << p.z()
-			<< " | " << x[i] << ", " << y[i] << ", " << z[i]
-			<< endl;
+		int idx;
+		Vector3f p_new;
 
-		mesh.position(v) = Vector3f(x[i], y[i], z[i]);
+		if (contains(fixed_ids, i)) {
+			p_new = p;
+		}
+		else {
+			p_new = Vector3f(x[j], y[j], z[j]);
+			j++;
+		}
+
+		cout << i << ": " << p.transpose() << " | " << p_new.transpose() << endl;
+
+
+		mesh.position(v) = p_new;
 		i++;
 	}
 
@@ -251,13 +291,16 @@ Matrix3f DeformableMesh::get_scaling_matrix() {
 }
 
 Matrix3f DeformableMesh::quaternion2rotationMatrix(Vector4f quaternion) {
-
+	cout << "A";
 	const float x = quaternion[0];
 	const float y = quaternion[1];
 	const float z = quaternion[2];
+	cout << "A";
 	const float w = quaternion[3];
+	cout << "A";
 
 	Matrix3f rotationMatrix;
+	cout << "A";
 	rotationMatrix <<
 		1 - 2 * y*y - 2 * z*z,
 		2 * x*y + 2 * w*z,
@@ -271,11 +314,23 @@ Matrix3f DeformableMesh::quaternion2rotationMatrix(Vector4f quaternion) {
 		2 * y*z - 2 * w*x,
 		1 - 2 * x*x - 2 * y*y;
 
+	cout << "A";
 	return rotationMatrix;
 
 }
 
 // eqn 25
+MatrixX4f DeformableMesh::orthoParamsToQuarternion(MatrixX3f orthoParams) {
+	const int r = orthoParams.rows();
+	MatrixX4f quat(r, 4);
+
+	for (int i = 0; i < r; i++) {
+		quat.row(i) = this->orthoParamsToQuarternion((Vector3f)orthoParams.row(i));
+	}
+
+	return quat;
+}
+
 Vector4f DeformableMesh::orthoParamsToQuarternion(Vector3f orthoParams) {
 	const float theta1 = orthoParams[0] / 2;
 	const float theta2 = orthoParams[1];

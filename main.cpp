@@ -464,7 +464,6 @@ void initRendering()
 	Surface_mesh mesh;
 	mesh.read("plane_4x4.obj");
 	DeformableMesh dm = DeformableMesh(mesh);
-	dm.test();
 
 	//// instantiate a Surface_mesh object
 	//Surface_mesh mesh;
@@ -549,7 +548,6 @@ int main(int argc, char** argv)
 	cout << "Reading " << argv[1] << endl;
 	m.read(argv[1]);
 	DeformableMesh dm(m);
-	dm.test();
 
 	//loadInput(argc,argv);
 	//deform();
