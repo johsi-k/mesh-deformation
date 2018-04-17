@@ -545,51 +545,57 @@ void deform() {
 // Set up OpenGL, define the callbacks and start the main loop
 int main(int argc, char** argv)
 {
-	loadInput(argc,argv);
-	deform();
-	glutInit(&argc, argv);
+	Surface_mesh m;
+	cout << "Reading " << argv[1] << endl;
+	m.read(argv[1]);
+	DeformableMesh dm(m);
+	dm.test();
 
-	// We're going to animate it, so double buffer 
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	//loadInput(argc,argv);
+	//deform();
+	//glutInit(&argc, argv);
 
-	// Initial parameters for window position and size
-	glutInitWindowPosition(60, 60);
-	glutInitWindowSize(360, 360);
+	//// We're going to animate it, so double buffer 
+	//glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 
-	camera.SetDimensions(600, 600);
+	//// Initial parameters for window position and size
+	//glutInitWindowPosition(60, 60);
+	//glutInitWindowSize(360, 360);
 
-	camera.SetDistance(10);
-	camera.SetCenter(Vector3f(0, 0, 0));
+	//camera.SetDimensions(600, 600);
 
-	glutCreateWindow("Assignment 0");
+	//camera.SetDistance(10);
+	//camera.SetCenter(Vector3f(0, 0, 0));
 
-	// Initialize OpenGL parameters.
-	initRendering();
+	//glutCreateWindow("Assignment 0");
 
-	// Set up callback functions for key presses
-	glutKeyboardFunc(keyboardFunc); // Handles "normal" ascii symbols
-	glutSpecialFunc(specialFunc);   // Handles "special" keyboard keys
-	glutKeyboardUpFunc(keyboardUpFunc);
+	//// Initialize OpenGL parameters.
+	//initRendering();
 
-	 // Set up the callback function for resizing windows
-	glutReshapeFunc(reshapeFunc);
+	//// Set up callback functions for key presses
+	//glutKeyboardFunc(keyboardFunc); // Handles "normal" ascii symbols
+	//glutSpecialFunc(specialFunc);   // Handles "special" keyboard keys
+	//glutKeyboardUpFunc(keyboardUpFunc);
 
-	// Call this whenever window needs redrawing
-	glutDisplayFunc(drawScene);
+	// // Set up the callback function for resizing windows
+	//glutReshapeFunc(reshapeFunc);
 
-	glutTimerFunc(25, spinTimer, 0);
+	//// Call this whenever window needs redrawing
+	//glutDisplayFunc(drawScene);
 
-	//Setup callback function for mouse & movement
-	glutMouseFunc(mouseFunc);
-	glutMotionFunc(motionFunc);
-	glutPassiveMotionFunc(passiveMouseFunc);
-	glutMouseWheelFunc(mouseWheel);
-	
-	//Draw the axes
-	makeDisplayLists();
+	//glutTimerFunc(25, spinTimer, 0);
 
-	// Start the main loop.  glutMainLoop never returns.
-	glutMainLoop();
+	////Setup callback function for mouse & movement
+	//glutMouseFunc(mouseFunc);
+	//glutMotionFunc(motionFunc);
+	//glutPassiveMotionFunc(passiveMouseFunc);
+	//glutMouseWheelFunc(mouseWheel);
+	//
+	////Draw the axes
+	//makeDisplayLists();
+
+	//// Start the main loop.  glutMainLoop never returns.
+	//glutMainLoop();
 
 	return 0;	// This line is never reached.
 }

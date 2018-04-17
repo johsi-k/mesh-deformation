@@ -1,7 +1,55 @@
+#define EIGEN_DONT_ALIGN
+
 #include "..\headers\DeformableMesh.h"
 #include "..\headers\eqn6.h"
+#include "igl\principal_curvature.h";
+
+Vector3f global_to_local(const Vector3f& global,
+	const Vector3f& origin,
+	const Matrix3f& frame)
+{
+	return frame.inverse() * (global - origin);
+}
 
 DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh( *(new Surface_mesh(mesh)) ) {
+
+	const int nv = _original.vertices_size();
+	const int nf = _original.faces_size();
+
+	MatrixX3f V(nv, 3);
+	MatrixX3i F(nf, 3);
+
+	for (auto v : _original.vertices()) {
+
+		for (int i = 0; i < 3; i++)
+			V( v.idx(), i ) = _original.position(v).matrix()[i];
+	}
+
+	for (Surface_mesh::Face f : _original.faces()) {
+
+		int i = 0;
+		
+		for (auto v : _original.vertices(f)) {
+			F( f.idx(), i ) = v.idx();
+			i++;
+		}
+
+	}
+
+
+	MatrixX3f PD1, PD2;
+	VectorXf PV1, PV2;
+
+	cout << V << endl;
+	cout << F << endl;
+
+	cout << "Principal" << endl;
+	
+	igl::principal_curvature<MatrixX3f, MatrixX3i, MatrixX3f, MatrixX3f, VectorXf, VectorXf>
+		(V, F, PD1, PD2, PV1, PV2);
+	
+	cout << PD1 << endl;
+	cout << PD2 << endl;
 
 	for (auto e : _original.edges()) {
 		Matrix3f m_frame = Matrix3f();
@@ -10,14 +58,8 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh( *(ne
 			0.0f, 1.0f, 0.0f,
 			0.0f, 0.0f, 1.0f;
 
-		this->frame_rotated.push_back(m_frame); 
-
-		Point p0 = _original.position(_original.vertex(e, 0));
-		Point p1 = _original.position(_original.vertex(e, 1));
-		Point p = p1 - p0;
-
-		Vector3f ve = p.matrix();
-		this->coeffs.push_back(ve);
+		this->frame_origin.push_back(m_frame);
+		this->frame_rotated.push_back(m_frame);
 	}
 
 }
@@ -61,6 +103,11 @@ void DeformableMesh::deform_mesh(const Surface_mesh *mesh0) {
 
 }
 
+template <class T>
+bool contains(const vector<T> &v, T t) {
+	return std::find(v.begin(), v.end(), t) != v.end();
+}
+
 void DeformableMesh::reconstruct_mesh() {
 
 	typedef SparseMatrix<float> MatrixType;
@@ -71,24 +118,46 @@ void DeformableMesh::reconstruct_mesh() {
 	const int ne = _original.edges_size();
 	const int nv = _original.vertices_size();
 	vector<Triplet> A_entries; // i, j, value
+	vector<int> fixed_ids;
+
+	fixed_ids.push_back(0);
+	fixed_ids.push_back(1);
+	fixed_ids.push_back(2);
+	fixed_ids.push_back(3);
 
 	MatrixX3f b(ne, 3);
-
+	int del = 0;
 	for (auto edge : _original.edges()) {
 
-		int v0 = _original.vertex(edge, 0).idx();
-		int v1 = _original.vertex(edge, 1).idx();
+		const Vertex v0 = _original.vertex(edge, 0);
+		const Vertex v1 = _original.vertex(edge, 1);
+		const int v0_idx = v0.idx();
+		const int v1_idx = v1.idx();
 
-		int eid = edge.idx();
+		const bool is_v0_fixed = false; //contains(fixed_ids, v0_idx);
+		const bool is_v1_fixed = false; //contains(fixed_ids, v1_idx);
 
-		// A
-		A_entries.push_back(Triplet(eid, v0, -1));
-		A_entries.push_back(Triplet(eid, v1,  1));
+		if (!(is_v0_fixed && is_v1_fixed)) {
+			const int eid = edge.idx();
 
-		b.row(eid) = this->frame_rotated[eid] * this->coeffs[eid];
+			const Point p0 = _original.position(v0);
+			const Point p1 = _original.position(v1);
+
+			Vector3f b_row = this->frame_origin[v1_idx] * global_to_local(p0, p1, this->frame_origin[v1_idx]);
+
+			if (is_v0_fixed) b_row += _original.position(v0);
+			else             A_entries.push_back(Triplet(eid, v0_idx, -1));
+
+			if (is_v1_fixed) b_row -= _original.position(v1);
+			else             A_entries.push_back(Triplet(eid, v1_idx, 1));
+
+			b.row(eid) = b_row;
+		}
+		else
+			del++;
 	}
 
-	MatrixType A(ne, nv);
+	MatrixType A(ne - del, nv);
 	A.setFromTriplets(A_entries.begin(), A_entries.end());
 	const MatrixType At = A.transpose();
 	const MatrixType AA = At * A;

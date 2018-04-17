@@ -15,7 +15,7 @@ class DeformableMesh
 
 public:
 
-	//DeformableMesh(Surface_mesh &mesh);
+	DeformableMesh(Surface_mesh &mesh);
 
 	Surface_mesh &mesh;
 
@@ -28,18 +28,17 @@ private:
 
 	Surface_mesh &_original;
 	
-	vector<Eigen::Vector3f> coeffs;
-	vector<Eigen::Matrix3f> frame_rotated;
-	vector<Eigen::Matrix3f> frame_origin;
+	vector<Matrix3f> frame_rotated;
+	vector<Matrix3f> frame_origin;
 
 	vector<float> localDepth;
 
 	void reconstruct_mesh();
 	float get_h_field(float t);
-	Eigen::Matrix3f get_scaling_matrix();
-	Eigen::Matrix3f quaternion2rotationMatrix(Eigen::Vector4f quaternion);
-	Eigen::Vector4f orthoParamsToQuarternion(Eigen::Vector3f orthoParams);
-	Eigen::Vector4f conformalParamsToQuaternion(Eigen::Vector3f conformalParams);
+	Matrix3f get_scaling_matrix();
+	Matrix3f quaternion2rotationMatrix(Vector4f quaternion);
+	Vector4f orthoParamsToQuarternion(Vector3f orthoParams);
+	Vector4f conformalParamsToQuaternion(Vector3f conformalParams);
 
 };
 
