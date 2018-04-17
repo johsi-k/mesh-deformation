@@ -12,6 +12,7 @@
     <ClCompile Include="surface_mesh\IO_stl.cpp" />
     <ClCompile Include="surface_mesh\Surface_mesh.cpp" />
     <ClCompile Include="surface_mesh\tinyply.cpp" />
+    <ClCompile Include="cpp\TriangleIntersect.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
@@ -29,6 +30,7 @@
     <ClInclude Include="Object3D.h" />
     <ClInclude Include="extra.h" />
     <ClInclude Include="Ray.h" />
+    <ClInclude Include="headers\TriangleIntersect.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.12.25827\include\cassert" />

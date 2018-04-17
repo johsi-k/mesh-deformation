@@ -80,6 +80,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cpp\DeformableMesh.cpp" />
+    <ClCompile Include="cpp\TriangleIntersect.cpp" />
     <ClCompile Include="eqn6.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="camera.cpp" />
@@ -96,6 +97,7 @@
     <ClInclude Include="extra.h" />
     <ClInclude Include="headers\DeformableMesh.h" />
     <ClInclude Include="headers\eqn6.h" />
+    <ClInclude Include="headers\TriangleIntersect.h" />
     <ClInclude Include="include\gl\freeglut.h" />
     <ClInclude Include="include\gl\freeglut_ext.h" />
     <ClInclude Include="include\gl\freeglut_std.h" />
