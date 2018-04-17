@@ -8,7 +8,7 @@
 #include "camera.h"
 #include <Eigen/Geometry>
 #include <surface_mesh/Surface_mesh.h>
-#include "headers\DeformableMesh.h"
+#include "headers\Deformablemesh.h"
 
 
 using namespace std;
@@ -16,7 +16,7 @@ using namespace surface_mesh;
 using namespace Eigen;
 
 //Surface mesh and related color array
-Surface_mesh mesh;
+Surface_mesh *mesh;
 DeformableMesh *deformableMesh;
 vector<Vector3f> colors;
 int hoveredTriangleIndex = INT_MAX;
@@ -102,21 +102,21 @@ int intersect(Ray r, int tmin, float &distance) {
 	int index = INT_MAX;
 	float t = FLT_MAX;
 
-	Surface_mesh::Face_container container = mesh.faces();
+	Surface_mesh::Face_container container = mesh->faces();
 	Surface_mesh::Face_iterator face_iter;
 	Surface_mesh::Vertex_around_face_circulator vafc, vafc_end;
 
 	int f_i = 0;
 
-	for (face_iter = mesh.faces_begin(); face_iter != mesh.faces_end(); ++face_iter) {
-		vafc = mesh.vertices(*face_iter);
+	for (face_iter = mesh->faces_begin(); face_iter != mesh->faces_end(); ++face_iter) {
+		vafc = mesh->vertices(*face_iter);
 		vafc_end = vafc;
 
 		Vector3f points[3];
 		int i = 0;
 		do {
 			Surface_mesh::Vertex v = *vafc;
-			points[i] = mesh.position(v);
+			points[i] = mesh->position(v);
 			i++;
 
 		} while (++vafc != vafc_end);
@@ -449,21 +449,21 @@ void drawScene(void)
 
 	glEnable(GL_COLOR_MATERIAL);
 
-	Surface_mesh::Face_container container = mesh.faces();
+	Surface_mesh::Face_container container = deformableMesh->mesh.faces();
 	Surface_mesh::Face_iterator face_iter;
 	Surface_mesh::Vertex_around_face_circulator vafc, vafc_end;
 	int f_i = 0;
 
-	for (face_iter = mesh.faces_begin(); face_iter != mesh.faces_end(); ++face_iter) {
-		vafc = mesh.vertices(*face_iter);
+	for (face_iter = deformableMesh->mesh.faces_begin(); face_iter != mesh->faces_end(); ++face_iter) {
+		vafc = deformableMesh->mesh.vertices(*face_iter);
 		vafc_end = vafc;
 
 		glBegin(GL_TRIANGLES);
 
 		do {
 			Surface_mesh::Vertex v = *vafc;
-			Vector3f p = mesh.position(v);
-			Vector3f n = mesh.compute_vertex_normal(v);
+			Vector3f p = deformableMesh->mesh.position(v);
+			Vector3f n = deformableMesh->mesh.compute_vertex_normal(v);
 
 			glNormal3d(n.x(),n.y(), n.z());
 			if (hoveredTriangleIndex == f_i) {
@@ -501,15 +501,15 @@ void drawScene(void)
 // Initialize OpenGL's rendering modes
 void initRendering()
 {
-	Surface_mesh mesh;
-	mesh.read("plane_4x4.obj");
-	DeformableMesh dm = DeformableMesh(mesh);
+	//Surface_mesh mesh;
+	//mesh->read("plane_4x4.obj");
+	//DeformableMesh dm = DeformableMesh(mesh);
 
 	//// instantiate a Surface_mesh object
 	//Surface_mesh mesh;
 
 	//// read a mesh specified as the first command line argument
-	//mesh.read(argv[1]);
+	//mesh->read(argv[1]);
 
 	//// eqn 6 test
 	//vector<int> fixed_ids;
@@ -523,7 +523,7 @@ void initRendering()
 	//	handle_ids.push_back(i);
 	//}
 	//
-	//VectorXf init = VectorXf::Zero(mesh.vertices_size());
+	//VectorXf init = VectorXf::Zero(mesh->vertices_size());
 	//VectorXf out;
 	//eqn6(mesh, fixed_ids, handle_ids, init, 0.52f, out);
 	
@@ -556,13 +556,37 @@ void initRendering()
 
 void loadInput(int argc, char **argv)
 {
-	// load the OBJ file here
-	mesh.read(argv[1]);
+	cout << "Reading " << argv[1] << endl;
+	Surface_mesh m;
+	m.read(argv[1]);
+	deformableMesh = new DeformableMesh(m);
 
-	for (int i = 0; i < mesh.n_faces(); i++) {
+	mesh = &deformableMesh->mesh;
+
+	for (int i = 0; i < mesh->n_faces(); i++) {
 		colors.push_back(Vector3f(0.7, 0.7, 0.7));
 	}
 }
+
+<<<<<<< HEAD
+=======
+////Function to deform the vertices (DOM & JOHSI, yall do stuff here)
+//void deform() {
+//	vector<int> fixed_ids;
+//	vector<int> handle_ids;
+//
+//	for (int i = 0; i < 4; i++) {
+//		fixed_ids.push_back(i);
+//	}
+//	
+//	for (int i = 12; i < 16; i++) {
+//		handle_ids.push_back(i);
+//	}
+//	
+//	VectorXf init = VectorXf::Zero(mesh->vertices_size());
+//	VectorXf out;
+//	eqn6(mesh, fixed_ids, handle_ids, init, 0.52f, out);
+//}
 
 
 // Main routine.
@@ -577,49 +601,49 @@ int main(int argc, char** argv)
 
 	//loadInput(argc,argv);
 	//deform();
-	//glutInit(&argc, argv);
+	glutInit(&argc, argv);
 
-	//// We're going to animate it, so double buffer 
-	//glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	// We're going to animate it, so double buffer 
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 
-	//// Initial parameters for window position and size
-	//glutInitWindowPosition(60, 60);
-	//glutInitWindowSize(width, height);
+	// Initial parameters for window position and size
+	glutInitWindowPosition(60, 60);
+	glutInitWindowSize(width, height);
 
-	//camera.SetDimensions(600, 600);
+	camera.SetDimensions(600, 600);
 
-	//camera.SetDistance(10);
-	//camera.SetCenter(Vector3f(0, 0, 0));
+	camera.SetDistance(10);
+	camera.SetCenter(Vector3f(0, 0, 0));
 
-	//glutCreateWindow("Assignment 0");
+	glutCreateWindow("Assignment 0");
 
-	//// Initialize OpenGL parameters.
-	//initRendering();
+	// Initialize OpenGL parameters.
+	initRendering();
 
-	//// Set up callback functions for key presses
-	//glutKeyboardFunc(keyboardFunc); // Handles "normal" ascii symbols
-	//glutSpecialFunc(specialFunc);   // Handles "special" keyboard keys
-	//glutKeyboardUpFunc(keyboardUpFunc);
+	// Set up callback functions for key presses
+	glutKeyboardFunc(keyboardFunc); // Handles "normal" ascii symbols
+	glutSpecialFunc(specialFunc);   // Handles "special" keyboard keys
+	glutKeyboardUpFunc(keyboardUpFunc);
 
-	// // Set up the callback function for resizing windows
-	//glutReshapeFunc(reshapeFunc);
+	 // Set up the callback function for resizing windows
+	glutReshapeFunc(reshapeFunc);
 
-	//// Call this whenever window needs redrawing
-	//glutDisplayFunc(drawScene);
+	// Call this whenever window needs redrawing
+	glutDisplayFunc(drawScene);
 
-	//glutTimerFunc(25, spinTimer, 0);
+	glutTimerFunc(25, spinTimer, 0);
 
-	////Setup callback function for mouse & movement
-	//glutMouseFunc(mouseFunc);
-	//glutMotionFunc(motionFunc);
-	//glutPassiveMotionFunc(passiveMouseFunc);
-	//glutMouseWheelFunc(mouseWheel);
-	//
-	////Draw the axes
-	//makeDisplayLists();
+	//Setup callback function for mouse & movement
+	glutMouseFunc(mouseFunc);
+	glutMotionFunc(motionFunc);
+	glutPassiveMotionFunc(passiveMouseFunc);
+	glutMouseWheelFunc(mouseWheel);
+	
+	//Draw the axes
+	makeDisplayLists();
 
-	//// Start the main loop.  glutMainLoop never returns.
-	//glutMainLoop();
+	// Start the main loop.  glutMainLoop never returns.
+	glutMainLoop();
 
 	return 0;	// This line is never reached.
 }
