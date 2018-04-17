@@ -53,6 +53,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>C:\Users\johsi\Documents\GitHub\mesh-deformation\include\libigl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -80,7 +81,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cpp\DeformableMesh.cpp" />
-    <ClCompile Include="eqn6.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="surface_mesh\IO.cpp" />
@@ -95,7 +95,6 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="extra.h" />
     <ClInclude Include="headers\DeformableMesh.h" />
-    <ClInclude Include="headers\eqn6.h" />
     <ClInclude Include="include\gl\freeglut.h" />
     <ClInclude Include="include\gl\freeglut_ext.h" />
     <ClInclude Include="include\gl\freeglut_std.h" />

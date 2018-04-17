@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="cpp\DeformableMesh.cpp" />
-    <ClCompile Include="eqn6.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="surface_mesh\IO.cpp" />
@@ -16,7 +15,6 @@
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="headers\DeformableMesh.h" />
-    <ClInclude Include="headers\eqn6.h" />
     <ClInclude Include="include\gl\freeglut.h" />
     <ClInclude Include="include\gl\freeglut_ext.h" />
     <ClInclude Include="include\gl\freeglut_std.h" />

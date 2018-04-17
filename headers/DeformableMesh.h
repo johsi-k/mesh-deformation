@@ -31,6 +31,8 @@ private:
 	vector<float> localDepth;
 
 	void reconstruct_mesh( vector<int> fixed_ids );
+	void get_orthos(const Surface_mesh& mesh, vector<int>& fixed_ids, vector<int>& handle_ids,
+		VectorXf& theta_initial, float theta_input, VectorXf& out);
 	float get_h_field(float t);
 	Matrix3f get_scaling_matrix();
 	Matrix3f quaternion2rotationMatrix(Vector4f quaternion);
