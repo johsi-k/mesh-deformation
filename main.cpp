@@ -18,6 +18,7 @@ using namespace Eigen;
 
 //Surface mesh and related color array
 Surface_mesh mesh;
+DeformableMesh *deformableMesh;
 vector<Vector3f> colors;
 int hoveredTriangleIndex = INT_MAX;
 
@@ -498,11 +499,6 @@ void drawScene(void)
 // Initialize OpenGL's rendering modes
 void initRendering()
 {
-	Surface_mesh mesh;
-	mesh.read("plane_4x4.obj");
-	//DeformableMesh dm = DeformableMesh(mesh);
-	//dm.test();
-
 	//// instantiate a Surface_mesh object
 	//Surface_mesh mesh;
 
@@ -585,11 +581,12 @@ void deform() {
 // Set up OpenGL, define the callbacks and start the main loop
 int main(int argc, char** argv)
 {
-	Surface_mesh m;
 	cout << "Reading " << argv[1] << endl;
-	m.read(argv[1]);
-	DeformableMesh dm(m);
-	dm.test();
+	mesh.read(argv[1]);
+	deformableMesh = new DeformableMesh(mesh);
+
+	deformableMesh->test();
+	mesh = deformableMesh->mesh;
 
 	//loadInput(argc,argv);
 	//deform();
