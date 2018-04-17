@@ -18,6 +18,7 @@ using namespace Eigen;
 
 //Surface mesh and related color array
 Surface_mesh mesh;
+DeformableMesh *deformableMesh;
 vector<Vector3f> colors;
 int hoveredTriangleIndex = INT_MAX;
 
@@ -54,6 +55,8 @@ int nextColor = 0;
 //Define the camera and mouse related constants
 Camera camera;
 bool gMousePressed = false;
+int width = 600;
+int height = 600;
 
 //Axis display list
 GLuint gAxisList;
@@ -67,7 +70,36 @@ Matrix3f generateMatrix3fFromVectors(Vector3f a, Vector3f b, Vector3f c) {
 	return M;
 }
 
-int intersect(Ray r, int tmin) {
+//Display text in openGL
+void displayString(float x, float y, string &text, Vector3f color) {
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix(); 
+	glLoadIdentity();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glDisable(GL_DEPTH_TEST);
+
+	glDisable(GL_LIGHTING);
+	glColor3f(color.x(), color.y(), color.z());
+	glRasterPos2f(x, y);
+
+	for (int i = 0; i < text.size();i++) {
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,text[i]);
+	} 
+	glEnable(GL_LIGHTING);
+	glEnable(GL_DEPTH_TEST); // Turn depth testing back on
+	
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix(); 
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+}
+
+int intersect(Ray r, int tmin, float &distance) {
 	int index = INT_MAX;
 	float t = FLT_MAX;
 
@@ -118,6 +150,8 @@ int intersect(Ray r, int tmin) {
 		}
 
 	}
+
+	distance = r.pointAtParameter(t).norm();
 	return index;
 }
 
@@ -178,7 +212,8 @@ void mouseWheel(int button, int dir, int x, int y) {
 //Called when mouse is moved without any buttons pressed
 void passiveMouseFunc(int x, int y) {
 	Ray r = camera.generateRay(x, y);
-	hoveredTriangleIndex = intersect(r, 0.001);
+	float dist;
+	hoveredTriangleIndex = intersect(r, 0.001,dist);
 
 	if (hoveredTriangleIndex < INT_MAX) {
 		if (isModeDeformedSelection) {
@@ -449,6 +484,12 @@ void drawScene(void)
 
 	glDisable(GL_COLOR_MATERIAL);
 
+	displayString(-0.9, 0.85, "X " + to_string(xAxisAngle),Vector3f(1,1,1));
+	displayString(-0.9, 0.75, "Y " + to_string(yAxisAngle),Vector3f(1,1,1));
+	displayString(-0.9, 0.65, "Z " + to_string(zAxisAngle),Vector3f(1,1,1));
+	displayString(-0.9, -0.75, "Handles " + to_string(deformedSelectionTriangles.size()),Vector3f(0,0,1));
+	displayString(-0.9, -0.85, "Deformed " + to_string(interpolationSelectionTriangles.size()),Vector3f(0,1,0));
+
 	glPushMatrix();
 	glTranslated(camera.GetCenter().x(), camera.GetCenter().y(), camera.GetCenter().z());
 	glCallList(gAxisList);
@@ -498,6 +539,9 @@ void initRendering()
 // w, h - width and height of the window in pixels.
  void reshapeFunc(int w, int h)
     {
+
+	    width = w;
+		height = h;
         camera.SetDimensions(w,h);
 
         camera.SetViewport(0,0,w,h);
@@ -544,10 +588,12 @@ void deform() {
 // Set up OpenGL, define the callbacks and start the main loop
 int main(int argc, char** argv)
 {
-	Surface_mesh m;
 	cout << "Reading " << argv[1] << endl;
-	m.read(argv[1]);
-	DeformableMesh dm(m);
+	mesh.read(argv[1]);
+	deformableMesh = new DeformableMesh(mesh);
+
+	deformableMesh->test();
+	mesh = deformableMesh->mesh;
 
 	//loadInput(argc,argv);
 	//deform();
@@ -558,7 +604,7 @@ int main(int argc, char** argv)
 
 	//// Initial parameters for window position and size
 	//glutInitWindowPosition(60, 60);
-	//glutInitWindowSize(360, 360);
+	//glutInitWindowSize(width, height);
 
 	//camera.SetDimensions(600, 600);
 
