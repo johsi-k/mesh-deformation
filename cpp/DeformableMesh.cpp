@@ -42,23 +42,16 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh( *(ne
 	MatrixX3f PD1, PD2;
 	VectorXf PV1, PV2;
 
-	cout << V << endl;
-	cout << F << endl;
-
-	cout << "Principal" << endl;
-	
 	igl::principal_curvature<MatrixX3f, MatrixX3i, MatrixX3f, MatrixX3f, VectorXf, VectorXf>
 		(V, F, PD1, PD2, PV1, PV2);
-	
-	cout << PD1 << endl;
-	cout << PD2 << endl;
 
 	for (auto e : _original.edges()) {
-		Matrix3f m_frame = Matrix3f();
-		m_frame <<
-			1.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 1.0f;
+		const int eid = e.idx();
+		Matrix3f m_frame(3, 3);
+
+		m_frame.row(0) = PD1.row(eid);
+		m_frame.row(1) = PD2.row(eid);
+		m_frame.row(2) = PD2.row(eid).cross(PD1.row(eid));
 
 		this->frame_origin.push_back(m_frame);
 		this->frame_rotated.push_back(m_frame);
@@ -80,7 +73,7 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh( *(ne
 	handle_ids.push_back(15);
 
 	theta_initial = VectorXf::Zero(mesh.vertices_size());
-	theta_input = 30*M_PI/180;
+	theta_input = 0;// 30 * M_PI / 180;
 
 
 	deform_mesh(fixed_ids, handle_ids, theta_initial, theta_input);
@@ -93,9 +86,6 @@ void DeformableMesh::deform_mesh(
 	float theta_input
 ) 
 {
-	cout << "fixed_ids size: " << fixed_ids.size() << "handle_ids size: " << handle_ids.size() << endl;
-	cout << "initial theta:" << endl << theta_initial << endl;
-	cout << "theta_input: " << endl << theta_input << endl;
 	const vector<Vector3f> p;
 
 	MatrixX3f params(_original.vertices_size(), 3);
@@ -200,15 +190,10 @@ void DeformableMesh::reconstruct_mesh( vector<int> fixed_ids ) {
 		eid++;
 	}
 
-	cout << _original.edges_size() << " " << ne << endl;
-
 	MatrixType A(ne, nv - 4);
 	A.setFromTriplets(A_entries.begin(), A_entries.end());
 	const MatrixType At = A.transpose();
 	const MatrixType AA = At * A;
-
-	std::cout << A << std::endl;
-	std::cout << AA << std::endl;
 
 	const VectorXf bx = At * b.col(0);
 	const VectorXf by = At * b.col(1);
@@ -216,13 +201,13 @@ void DeformableMesh::reconstruct_mesh( vector<int> fixed_ids ) {
 
 	//solve linear system
 	SolverType solver;
-	cout << "Test" << endl;
 	solver.compute(AA);
 	const VectorXf x = solver.solve(bx);
 	const VectorXf y = solver.solve(by);
 	const VectorXf z = solver.solve(bz);
-	
-	cout << "original | new" << endl;
+
+	float total_error = 0;
+
 	int i = 0;
 	j = 0;
 	for (auto v : _original.vertices()) {
@@ -238,28 +223,13 @@ void DeformableMesh::reconstruct_mesh( vector<int> fixed_ids ) {
 			j++;
 		}
 
-		cout << i << ": " << p.transpose() << " | " << p_new.transpose() << endl;
-
+		float e_sqr = (p - p_new).squaredNorm();
+		total_error += e_sqr;
 
 		mesh.position(v) = p_new;
 		i++;
 	}
-
-	i = 0;
-	cout << "_original" << endl;
-	for (auto v : _original.vertices()) {
-		Point p = _original.position(v);
-		cout << i << ": " << p.x() << ", " << p.y() << ", " << p.z() << endl;
-		i++;
-	}
-
-	i = 0;
-	cout << "mesh" << endl;
-	for (auto v : mesh.vertices()) {
-		Point p = mesh.position(v);
-		cout << i << ": " << p.x() << ", " << p.y() << ", " << p.z() << endl;
-		i++;
-	}
+	cout << "total error: " << total_error << endl;
 }
 
 float DeformableMesh::get_h_field(float t) {
@@ -291,16 +261,13 @@ Matrix3f DeformableMesh::get_scaling_matrix() {
 }
 
 Matrix3f DeformableMesh::quaternion2rotationMatrix(Vector4f quaternion) {
-	cout << "A";
+
 	const float x = quaternion[0];
 	const float y = quaternion[1];
 	const float z = quaternion[2];
-	cout << "A";
 	const float w = quaternion[3];
-	cout << "A";
 
 	Matrix3f rotationMatrix;
-	cout << "A";
 	rotationMatrix <<
 		1 - 2 * y*y - 2 * z*z,
 		2 * x*y + 2 * w*z,
@@ -314,7 +281,6 @@ Matrix3f DeformableMesh::quaternion2rotationMatrix(Vector4f quaternion) {
 		2 * y*z - 2 * w*x,
 		1 - 2 * x*x - 2 * y*y;
 
-	cout << "A";
 	return rotationMatrix;
 
 }

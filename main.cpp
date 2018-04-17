@@ -592,7 +592,6 @@ int main(int argc, char** argv)
 	mesh.read(argv[1]);
 	deformableMesh = new DeformableMesh(mesh);
 
-	deformableMesh->test();
 	mesh = deformableMesh->mesh;
 
 	//loadInput(argc,argv);
