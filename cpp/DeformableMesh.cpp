@@ -3,9 +3,10 @@
 #include <cmath>
 
 #include "..\headers\DeformableMesh.h"
-#include "..\headers\eqn6.h"
-#include "igl\principal_curvature.h";
-
+#include "..\headers\TriangleIntersect.h"
+#include "igl\principal_curvature.h"
+#include <algorithm>
+#include "..\Ray.h"
 
 Vector3f global_to_local(const Vector3f& global,
 	const Vector3f& origin,
@@ -14,7 +15,7 @@ Vector3f global_to_local(const Vector3f& global,
 	return frame.inverse() * (global - origin);
 }
 
-DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh( *(new Surface_mesh(mesh)) ) {
+DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh(*(new Surface_mesh(mesh))) {
 
 	const int nv = _original.vertices_size();
 	const int nf = _original.faces_size();
@@ -25,15 +26,15 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh( *(ne
 	for (auto v : _original.vertices()) {
 
 		for (int i = 0; i < 3; i++)
-			V( v.idx(), i ) = _original.position(v).matrix()[i];
+			V(v.idx(), i) = _original.position(v).matrix()[i];
 	}
 
 	for (Surface_mesh::Face f : _original.faces()) {
 
 		int i = 0;
-		
+
 		for (auto v : _original.vertices(f)) {
-			F( f.idx(), i ) = v.idx();
+			F(f.idx(), i) = v.idx();
 			i++;
 		}
 
@@ -75,16 +76,15 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh( *(ne
 	theta_initial = VectorXf::Zero(mesh.vertices_size());
 	theta_input = 0;// 30 * M_PI / 180;
 
-
 	deform_mesh(fixed_ids, handle_ids, theta_initial, theta_input);
 }
 
 void DeformableMesh::deform_mesh(
-	vector<int> fixed_ids, 
-	vector<int> handle_ids, 
-	VectorXf theta_initial, 
+	vector<int> fixed_ids,
+	vector<int> handle_ids,
+	VectorXf theta_initial,
 	float theta_input
-) 
+)
 {
 	const vector<Vector3f> p;
 
@@ -94,7 +94,7 @@ void DeformableMesh::deform_mesh(
 	if (is_one_axis) {
 		VectorXf ortho;
 
-		eqn6(_original, fixed_ids, handle_ids, theta_initial, theta_input, ortho);
+		get_orthos(_original, fixed_ids, handle_ids, theta_initial, theta_input, ortho);
 
 		params.col(0) = ortho;
 	}
@@ -120,12 +120,12 @@ bool contains(const vector<T> &v, T t) {
 	return std::find(v.begin(), v.end(), t) != v.end();
 }
 
-void DeformableMesh::reconstruct_mesh( vector<int> fixed_ids ) {
+void DeformableMesh::reconstruct_mesh(vector<int> fixed_ids) {
 
 	typedef SparseMatrix<float> MatrixType;
 	typedef SparseLU< MatrixType > SolverType;
 	typedef Surface_mesh::Vertex Vertex;
-	typedef Triplet<float, int> Triplet; 
+	typedef Triplet<float, int> Triplet;
 
 	const int nv = _original.vertices_size();
 	vector<Triplet> A_entries; // i, j, value
@@ -157,7 +157,8 @@ void DeformableMesh::reconstruct_mesh( vector<int> fixed_ids ) {
 	for (int i = 0; i < _original.vertices_size(); i++) {
 		if (contains(fixed_ids, i)) {
 			lookup.push_back(-1);
-		} else
+		}
+		else
 		{
 			lookup.push_back(j);
 			j++;
@@ -179,7 +180,7 @@ void DeformableMesh::reconstruct_mesh( vector<int> fixed_ids ) {
 		const Point p1 = _original.position(v1);
 
 		Vector3f b_row = this->frame_rotated[v1_idx] * global_to_local(p1, p0, this->frame_origin[v1_idx]);
-		
+
 		if (is_v0_fixed) b_row += _original.position(v0);
 		else             A_entries.push_back(Triplet(eid, lookup[v0_idx], -1));
 
@@ -207,7 +208,6 @@ void DeformableMesh::reconstruct_mesh( vector<int> fixed_ids ) {
 	const VectorXf z = solver.solve(bz);
 
 	float total_error = 0;
-
 	int i = 0;
 	j = 0;
 	for (auto v : _original.vertices()) {
@@ -230,6 +230,116 @@ void DeformableMesh::reconstruct_mesh( vector<int> fixed_ids ) {
 		i++;
 	}
 	cout << "total error: " << total_error << endl;
+}
+
+void DeformableMesh::get_orthos(const Surface_mesh& mesh, vector<int>& fixed_ids, vector<int>& handle_ids,
+	VectorXf& theta_initial, float theta_input, VectorXf& out)
+{
+	typedef SparseMatrix<float> MatrixType;
+	typedef SparseLU< MatrixType > SolverType;
+
+	typedef Triplet<float, int> Triplet; // for filling out the matrix
+
+	const int nv = mesh.vertices_size(); //number of equations and unknowns
+
+										 // build linear system Ax = B
+
+										 // entries for A matrix
+	vector<Triplet> entries; // i, j, value
+
+	for (auto v : mesh.vertices()) {
+
+		int j = v.idx();
+
+		//cout << "vertex:" << v << endl;
+
+		// h is outgoing halfedge from each vertex
+		Surface_mesh::Halfedge h0, h;
+		h0 = h = mesh.halfedge(v);
+
+		float Wjj = 0; // weights on the diagonal
+
+					   // if vertex index is found in handle or fixed group, set coefficients to 1
+		bool is_handle_or_fixed = (find(handle_ids.begin(), handle_ids.end(), j) != handle_ids.end()) ||
+			(find(fixed_ids.begin(), fixed_ids.end(), j) != fixed_ids.end());
+
+		if (is_handle_or_fixed) {
+			entries.push_back(Triplet(j, j, 1.0f));
+		}
+		else {
+
+			do {
+				// for every half edge, find vertices j, i, k, l 
+				Surface_mesh::Vertex vj = mesh.from_vertex(h);
+				Surface_mesh::Vertex vi = mesh.to_vertex(h);
+				Surface_mesh::Vertex vl = mesh.to_vertex(mesh.next_halfedge(h));
+				Surface_mesh::Vertex vk = mesh.to_vertex(mesh.next_halfedge(mesh.opposite_halfedge(h)));
+
+				int i = vi.idx();
+
+				// find points
+				Vector3f pj = mesh.position(v);
+				Vector3f pi = mesh.position(vi);
+				Vector3f pl = mesh.position(vl);
+				Vector3f pk = mesh.position(vk);
+
+				// find length of edges
+				Vector3f li = pi - pl;
+				Vector3f lj = pj - pl;
+				Vector3f ki = pi - pk;
+				Vector3f kj = pj - pk;
+
+				float cot_a = 0;
+				float cot_b = 0;
+
+				if (!mesh.is_boundary(h)) {
+					cot_a = li.dot(lj) / li.cross(lj).norm();
+				}
+
+				if (!mesh.is_boundary(mesh.opposite_halfedge(h))) {
+					cot_b = ki.dot(kj) / ki.cross(kj).norm();
+				}
+
+
+				// the weight of vertex i for reference vertex j
+				float Wji = cot_a + cot_b;
+				Wjj += Wji;
+
+				// add weight Wji
+				entries.push_back(Triplet(j, i, -Wji));
+
+				h = mesh.next_halfedge(mesh.opposite_halfedge(h)); // move to next vertex
+			} while (h != h0);
+
+			// add diagonal weight Wjj
+			entries.push_back(Triplet(j, j, Wjj));
+
+		}
+	}
+
+	MatrixType A;
+	A.resize(nv, nv);
+	A.setFromTriplets(entries.begin(), entries.end());
+
+	//build b
+	VectorXf b = VectorXf::Zero(A.cols());
+	for (auto i : fixed_ids) {
+		b[i] = theta_initial[i];
+	}
+
+	for (auto i : handle_ids) {
+		b[i] = theta_input;
+	}
+
+	//solve linear system
+	SolverType solver;
+	solver.compute(A);
+	out = solver.solve(b);
+
+	std::cout << A << std::endl;
+
+	std::cout << "result" << std::endl;
+	std::cout << out.transpose() << std::endl;
 }
 
 float DeformableMesh::get_h_field(float t) {
@@ -326,4 +436,28 @@ Vector4f DeformableMesh::conformalParamsToQuaternion(Vector3f conformalParams) {
 	const float w = (4 - n_abs_sqr) * denom;
 
 	return Vector4f(x, y, z, w);
+}
+
+float truncFloat(float x) {
+	return x <= 0 ? FLT_MAX : x;
+}
+
+vector<float> DeformableMesh::computeInternalDistances() {
+
+	vector<float> distances;
+	const float alpha = 0.5;
+	const float beta = 0.5;
+	const float r1 = FLT_MAX;
+	const float r2 = FLT_MAX;
+
+	for (auto v : _original.vertices()) {
+		Vector3f inwardsRay = (Vector3f)-this->frame_rotated[v.idx()].row(2);
+		Ray r(_original.position(v), inwardsRay);
+		float dist;
+		TriangleIntersect::intersect(r, 0.01, dist, &mesh);
+		float phi_p = min(min(alpha*dist, beta*r1), beta*r2);
+		distances.push_back(phi_p);
+	}
+
+	return distances;
 }

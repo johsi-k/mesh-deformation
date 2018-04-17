@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="cpp\DeformableMesh.cpp" />
-    <ClCompile Include="eqn6.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="surface_mesh\IO.cpp" />
@@ -12,11 +11,11 @@
     <ClCompile Include="surface_mesh\IO_stl.cpp" />
     <ClCompile Include="surface_mesh\Surface_mesh.cpp" />
     <ClCompile Include="surface_mesh\tinyply.cpp" />
+    <ClCompile Include="cpp\TriangleIntersect.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="headers\DeformableMesh.h" />
-    <ClInclude Include="headers\eqn6.h" />
     <ClInclude Include="include\gl\freeglut.h" />
     <ClInclude Include="include\gl\freeglut_ext.h" />
     <ClInclude Include="include\gl\freeglut_std.h" />
@@ -29,6 +28,7 @@
     <ClInclude Include="Object3D.h" />
     <ClInclude Include="extra.h" />
     <ClInclude Include="Ray.h" />
+    <ClInclude Include="headers\TriangleIntersect.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.12.25827\include\cassert" />
