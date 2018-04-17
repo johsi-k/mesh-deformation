@@ -99,7 +99,7 @@ void displayString(float x, float y, string &text, Vector3f color) {
 	glPopMatrix();
 }
 
-int intersect(Ray r, int tmin) {
+int intersect(Ray r, int tmin, float &distance) {
 	int index = INT_MAX;
 	float t = FLT_MAX;
 
@@ -150,6 +150,8 @@ int intersect(Ray r, int tmin) {
 		}
 
 	}
+
+	distance = r.pointAtParameter(t).norm();
 	return index;
 }
 
@@ -210,7 +212,8 @@ void mouseWheel(int button, int dir, int x, int y) {
 //Called when mouse is moved without any buttons pressed
 void passiveMouseFunc(int x, int y) {
 	Ray r = camera.generateRay(x, y);
-	hoveredTriangleIndex = intersect(r, 0.001);
+	float dist;
+	hoveredTriangleIndex = intersect(r, 0.001,dist);
 
 	if (hoveredTriangleIndex < INT_MAX) {
 		if (isModeDeformedSelection) {
