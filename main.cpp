@@ -497,9 +497,9 @@ void initRendering()
 void loadInput(int argc, char **argv)
 {
 	cout << "Reading " << argv[1] << endl;
-	Surface_mesh m;
-	m.read(argv[1]);
-	deformableMesh = new DeformableMesh(m);
+	Surface_mesh *m = new Surface_mesh();
+	m->read(argv[1]);
+	deformableMesh = new DeformableMesh(*m);
 
 	mesh = &deformableMesh->mesh;
 
@@ -528,6 +528,8 @@ void deform(Vector3f angles) {
 				Surface_mesh::Vertex v = *vafc;
 				fixed_ids.push_back(v.idx());
 
+				cout << "fixed " << v.idx() << endl;
+
 			} while (++vafc != vafc_end);
 		}
 
@@ -536,14 +538,18 @@ void deform(Vector3f angles) {
 				Surface_mesh::Vertex v = *vafc;
 				handle_ids.push_back(v.idx());
 
+				cout << "handle " << v.idx() << endl;
+
 			} while (++vafc != vafc_end);
 		}
 
 		f_i++;
 	}
 	
-	VectorXf init = VectorXf::Zero(mesh->vertices_size());
-	VectorXf out;
+	VectorXf init = VectorXf::Zero(mesh->vertices_size(), 1);
+	cout << init.rows() << " " << init.cols() << endl;
+
+	deformableMesh->deform_mesh(fixed_ids, handle_ids, init, (angles.x() * M_PI / 180));
 	//eqn6(mesh, fixed_ids, handle_ids, init, 0.52f, out);
 }
 
@@ -552,13 +558,7 @@ void deform(Vector3f angles) {
 int main(int argc, char** argv)
 {
 	cout << "Reading " << argv[1] << endl;
-	mesh.read(argv[1]);
-	deformableMesh = new DeformableMesh(mesh);
-
-	mesh = deformableMesh->mesh;
-
-	//loadInput(argc,argv);
-	//deform();
+	loadInput(argc,argv);
 	glutInit(&argc, argv);
 
 	// We're going to animate it, so double buffer 

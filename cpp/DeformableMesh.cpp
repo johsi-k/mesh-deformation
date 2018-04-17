@@ -94,7 +94,7 @@ void DeformableMesh::deform_mesh(
 	if (is_one_axis) {
 		VectorXf ortho;
 
-		get_orthos(_original, fixed_ids, handle_ids, theta_initial, theta_input, ortho);
+		get_orthos(fixed_ids, handle_ids, theta_initial, theta_input, ortho);
 
 		params.col(0) = ortho;
 	}
@@ -230,9 +230,10 @@ void DeformableMesh::reconstruct_mesh(vector<int> fixed_ids) {
 		i++;
 	}
 	cout << "total error: " << total_error << endl;
+	cout << _original.vertices_size() << endl;
 }
 
-void DeformableMesh::get_orthos(const Surface_mesh& mesh, vector<int>& fixed_ids, vector<int>& handle_ids,
+void DeformableMesh::get_orthos(vector<int>& fixed_ids, vector<int>& handle_ids,
 	VectorXf& theta_initial, float theta_input, VectorXf& out)
 {
 	typedef SparseMatrix<float> MatrixType;
@@ -240,14 +241,14 @@ void DeformableMesh::get_orthos(const Surface_mesh& mesh, vector<int>& fixed_ids
 
 	typedef Triplet<float, int> Triplet; // for filling out the matrix
 
-	const int nv = mesh.vertices_size(); //number of equations and unknowns
+	const int nv = _original.vertices_size(); //number of equations and unknowns
 
 										 // build linear system Ax = B
 
 										 // entries for A matrix
 	vector<Triplet> entries; // i, j, value
 
-	for (auto v : mesh.vertices()) {
+	for (auto v : _original.vertices()) {
 
 		int j = v.idx();
 
@@ -255,7 +256,7 @@ void DeformableMesh::get_orthos(const Surface_mesh& mesh, vector<int>& fixed_ids
 
 		// h is outgoing halfedge from each vertex
 		Surface_mesh::Halfedge h0, h;
-		h0 = h = mesh.halfedge(v);
+		h0 = h = _original.halfedge(v);
 
 		float Wjj = 0; // weights on the diagonal
 
@@ -270,18 +271,18 @@ void DeformableMesh::get_orthos(const Surface_mesh& mesh, vector<int>& fixed_ids
 
 			do {
 				// for every half edge, find vertices j, i, k, l 
-				Surface_mesh::Vertex vj = mesh.from_vertex(h);
-				Surface_mesh::Vertex vi = mesh.to_vertex(h);
-				Surface_mesh::Vertex vl = mesh.to_vertex(mesh.next_halfedge(h));
-				Surface_mesh::Vertex vk = mesh.to_vertex(mesh.next_halfedge(mesh.opposite_halfedge(h)));
+				Surface_mesh::Vertex vj = _original.from_vertex(h);
+				Surface_mesh::Vertex vi = _original.to_vertex(h);
+				Surface_mesh::Vertex vl = _original.to_vertex(_original.next_halfedge(h));
+				Surface_mesh::Vertex vk = _original.to_vertex(_original.next_halfedge(_original.opposite_halfedge(h)));
 
 				int i = vi.idx();
 
 				// find points
-				Vector3f pj = mesh.position(v);
-				Vector3f pi = mesh.position(vi);
-				Vector3f pl = mesh.position(vl);
-				Vector3f pk = mesh.position(vk);
+				Vector3f pj = _original.position(v);
+				Vector3f pi = _original.position(vi);
+				Vector3f pl = _original.position(vl);
+				Vector3f pk = _original.position(vk);
 
 				// find length of edges
 				Vector3f li = pi - pl;
@@ -292,11 +293,11 @@ void DeformableMesh::get_orthos(const Surface_mesh& mesh, vector<int>& fixed_ids
 				float cot_a = 0;
 				float cot_b = 0;
 
-				if (!mesh.is_boundary(h)) {
+				if (!_original.is_boundary(h)) {
 					cot_a = li.dot(lj) / li.cross(lj).norm();
 				}
 
-				if (!mesh.is_boundary(mesh.opposite_halfedge(h))) {
+				if (!_original.is_boundary(_original.opposite_halfedge(h))) {
 					cot_b = ki.dot(kj) / ki.cross(kj).norm();
 				}
 
@@ -308,7 +309,7 @@ void DeformableMesh::get_orthos(const Surface_mesh& mesh, vector<int>& fixed_ids
 				// add weight Wji
 				entries.push_back(Triplet(j, i, -Wji));
 
-				h = mesh.next_halfedge(mesh.opposite_halfedge(h)); // move to next vertex
+				h = _original.next_halfedge(_original.opposite_halfedge(h)); // move to next vertex
 			} while (h != h0);
 
 			// add diagonal weight Wjj
@@ -321,9 +322,14 @@ void DeformableMesh::get_orthos(const Surface_mesh& mesh, vector<int>& fixed_ids
 	A.resize(nv, nv);
 	A.setFromTriplets(entries.begin(), entries.end());
 
+	cout << "theta initial: " << theta_initial.size() << endl;
+
 	//build b
-	VectorXf b = VectorXf::Zero(A.cols());
-	for (auto i : fixed_ids) {
+	VectorXf b = VectorXf::Zero(A.cols(), 1);
+	cout << _original.vertices_size() << endl;
+	cout << A.rows() << " " << A.cols() << endl;
+	cout << b.rows() << " " << b.cols() << endl;
+	for (int i : fixed_ids) {
 		b[i] = theta_initial[i];
 	}
 
@@ -336,10 +342,6 @@ void DeformableMesh::get_orthos(const Surface_mesh& mesh, vector<int>& fixed_ids
 	solver.compute(A);
 	out = solver.solve(b);
 
-	std::cout << A << std::endl;
-
-	std::cout << "result" << std::endl;
-	std::cout << out.transpose() << std::endl;
 }
 
 float DeformableMesh::get_h_field(float t) {
