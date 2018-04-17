@@ -115,52 +115,71 @@ void DeformableMesh::reconstruct_mesh() {
 	typedef Surface_mesh::Vertex Vertex;
 	typedef Triplet<float, int> Triplet; 
 
-	const int ne = _original.edges_size();
 	const int nv = _original.vertices_size();
 	vector<Triplet> A_entries; // i, j, value
-	vector<int> fixed_ids;
+	vector<int> fixed_ids(4);
 
 	fixed_ids.push_back(0);
 	fixed_ids.push_back(1);
 	fixed_ids.push_back(2);
 	fixed_ids.push_back(3);
 
-	MatrixX3f b(ne, 3);
-	int del = 0;
+	vector<Surface_mesh::Edge> new_edges;
+
 	for (auto edge : _original.edges()) {
+
+		const Vertex v0 = _original.vertex(edge, 0);
+		const Vertex v1 = _original.vertex(edge, 1);
+
+		const int v0_idx = v0.idx();
+		const int v1_idx = v1.idx();
+
+		const bool is_v0_fixed = contains(fixed_ids, v0_idx);
+		const bool is_v1_fixed = contains(fixed_ids, v1_idx);
+
+		if (!(is_v0_fixed && is_v1_fixed)) {
+			new_edges.push_back(edge);
+		}
+	}
+
+	const int ne = new_edges.size();
+	MatrixX3f b(ne, 3);
+
+	int eid = 0;
+	for (Surface_mesh::Edge edge : new_edges) {
 
 		const Vertex v0 = _original.vertex(edge, 0);
 		const Vertex v1 = _original.vertex(edge, 1);
 		const int v0_idx = v0.idx();
 		const int v1_idx = v1.idx();
 
-		const bool is_v0_fixed = false; //contains(fixed_ids, v0_idx);
-		const bool is_v1_fixed = false; //contains(fixed_ids, v1_idx);
+		const bool is_v0_fixed = contains(fixed_ids, v0_idx);
+		const bool is_v1_fixed = contains(fixed_ids, v1_idx);
 
-		if (!(is_v0_fixed && is_v1_fixed)) {
-			const int eid = edge.idx();
+		const Point p0 = _original.position(v0);
+		const Point p1 = _original.position(v1);
 
-			const Point p0 = _original.position(v0);
-			const Point p1 = _original.position(v1);
+		Vector3f b_row = this->frame_rotated[v1_idx] * global_to_local(p1, p0, this->frame_origin[v1_idx]);
+		
+		if (is_v0_fixed) b_row += _original.position(v0);
+		else             A_entries.push_back(Triplet(eid, v0_idx - 4, -1));
 
-			Vector3f b_row = this->frame_origin[v1_idx] * global_to_local(p0, p1, this->frame_origin[v1_idx]);
+		if (is_v1_fixed) b_row -= _original.position(v1);
+		else             A_entries.push_back(Triplet(eid, v1_idx - 4, 1));
 
-			if (is_v0_fixed) b_row += _original.position(v0);
-			else             A_entries.push_back(Triplet(eid, v0_idx, -1));
-
-			if (is_v1_fixed) b_row -= _original.position(v1);
-			else             A_entries.push_back(Triplet(eid, v1_idx, 1));
-
-			b.row(eid) = b_row;
-		}
-		else
-			del++;
+		b.row(eid) = b_row;
+		eid++;
 	}
 
-	MatrixType A(ne - del, nv);
+	cout << _original.edges_size() << " " << ne << endl;
+
+	MatrixType A(ne, nv - 4);
 	A.setFromTriplets(A_entries.begin(), A_entries.end());
 	const MatrixType At = A.transpose();
 	const MatrixType AA = At * A;
+
+	std::cout << A << std::endl;
+	std::cout << AA << std::endl;
 
 	const VectorXf bx = At * b.col(0);
 	const VectorXf by = At * b.col(1);
@@ -168,13 +187,11 @@ void DeformableMesh::reconstruct_mesh() {
 
 	//solve linear system
 	SolverType solver;
+	cout << "Test" << endl;
 	solver.compute(AA);
 	const VectorXf x = solver.solve(bx);
 	const VectorXf y = solver.solve(by);
 	const VectorXf z = solver.solve(bz);
-
-	std::cout << A << std::endl;
-	std::cout << AA << std::endl;
 	
 	cout << "original | new" << endl;
 	int i = 0;
