@@ -54,6 +54,8 @@ int nextColor = 0;
 //Define the camera and mouse related constants
 Camera camera;
 bool gMousePressed = false;
+int width = 600;
+int height = 600;
 
 //Axis display list
 GLuint gAxisList;
@@ -65,6 +67,35 @@ Matrix3f generateMatrix3fFromVectors(Vector3f a, Vector3f b, Vector3f c) {
 		b.x(), b.y(), b.z(),
 		c.x(), c.y(), c.z();
 	return M;
+}
+
+//Display text in openGL
+void displayString(float x, float y, string &text, Vector3f color) {
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix(); 
+	glLoadIdentity();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glDisable(GL_DEPTH_TEST);
+
+	glDisable(GL_LIGHTING);
+	glColor3f(color.x(), color.y(), color.z());
+	glRasterPos2f(x, y);
+
+	for (int i = 0; i < text.size();i++) {
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,text[i]);
+	} 
+	glEnable(GL_LIGHTING);
+	glEnable(GL_DEPTH_TEST); // Turn depth testing back on
+	
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix(); 
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
 }
 
 int intersect(Ray r, int tmin) {
@@ -449,6 +480,12 @@ void drawScene(void)
 
 	glDisable(GL_COLOR_MATERIAL);
 
+	displayString(-0.9, 0.85, "X " + to_string(xAxisAngle),Vector3f(1,1,1));
+	displayString(-0.9, 0.75, "Y " + to_string(yAxisAngle),Vector3f(1,1,1));
+	displayString(-0.9, 0.65, "Z " + to_string(zAxisAngle),Vector3f(1,1,1));
+	displayString(-0.9, -0.75, "Handles " + to_string(deformedSelectionTriangles.size()),Vector3f(0,0,1));
+	displayString(-0.9, -0.85, "Deformed " + to_string(interpolationSelectionTriangles.size()),Vector3f(0,1,0));
+
 	glPushMatrix();
 	glTranslated(camera.GetCenter().x(), camera.GetCenter().y(), camera.GetCenter().z());
 	glCallList(gAxisList);
@@ -463,8 +500,8 @@ void initRendering()
 {
 	Surface_mesh mesh;
 	mesh.read("plane_4x4.obj");
-	DeformableMesh dm = DeformableMesh(mesh);
-	dm.test();
+	//DeformableMesh dm = DeformableMesh(mesh);
+	//dm.test();
 
 	//// instantiate a Surface_mesh object
 	//Surface_mesh mesh;
@@ -499,6 +536,9 @@ void initRendering()
 // w, h - width and height of the window in pixels.
  void reshapeFunc(int w, int h)
     {
+
+	    width = w;
+		height = h;
         camera.SetDimensions(w,h);
 
         camera.SetViewport(0,0,w,h);
@@ -560,7 +600,7 @@ int main(int argc, char** argv)
 
 	//// Initial parameters for window position and size
 	//glutInitWindowPosition(60, 60);
-	//glutInitWindowSize(360, 360);
+	//glutInitWindowSize(width, height);
 
 	//camera.SetDimensions(600, 600);
 
