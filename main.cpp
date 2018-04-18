@@ -1,6 +1,7 @@
 #include "GL/freeglut.h"
 #include <cmath>
 #include <iostream>
+#include <set>
 #include <sstream>
 #include <vector>
 #include "extra.h"
@@ -527,9 +528,6 @@ void deform(Vector3f angles) {
 			do {
 				Surface_mesh::Vertex v = *vafc;
 				fixed_ids.push_back(v.idx());
-
-				cout << "fixed " << v.idx() << endl;
-
 			} while (++vafc != vafc_end);
 		}
 
@@ -537,14 +535,26 @@ void deform(Vector3f angles) {
 			do {
 				Surface_mesh::Vertex v = *vafc;
 				handle_ids.push_back(v.idx());
-
-				cout << "handle " << v.idx() << endl;
-
 			} while (++vafc != vafc_end);
 		}
 
 		f_i++;
 	}
+
+	set<int> fixed(fixed_ids.begin(), fixed_ids.end());
+	set<int> handle(handle_ids.begin(), handle_ids.end());
+
+	fixed_ids.assign(fixed.begin(), fixed.end());
+	handle_ids.assign(handle.begin(), handle.end());
+
+	for (int v : fixed_ids) {
+		cout << "fixed " << v << endl;
+	}
+	
+	for (int v : handle_ids) {
+		cout << "handle " << v << endl;
+	}
+
 	
 	VectorXf init = VectorXf::Zero(mesh->vertices_size(), 1);
 	cout << init.rows() << " " << init.cols() << endl;
