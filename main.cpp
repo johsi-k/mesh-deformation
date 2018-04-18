@@ -26,6 +26,7 @@ Vector3f hoveredIntersectionPoint = Vector3f(FLT_MAX, FLT_MAX, FLT_MAX);
 //States to select triangles for mesh deformation or rotate them
 bool isModeDeformedSelection = false;
 bool isModeFixedSelecton = false;
+bool isModeErase = false;
 bool isModeLoop = false;
 bool isModeRotateX = false;
 bool isModeRotateY = false;
@@ -97,10 +98,10 @@ void displayString(float x, float y, string &text, Vector3f color) {
 bool isBacking = false;
 void loopAngleUpdate(int x) {
 
-	if (xAxisAngle == 360) {
+	if (xAxisAngle == 180) {
 		isBacking = true;
 	}
-	else if (xAxisAngle == 0) {
+	else if (xAxisAngle == -180) {
 		isBacking = false;
 	}
 
@@ -118,9 +119,9 @@ void setAngleForRotation(int incr) {
 	if (isModeRotateX) {
 		xAxisAngle += incr;
 
-		if (xAxisAngle < 0) {
+		if (xAxisAngle < -180) {
 			xAxisAngle += 360;
-		} else if (xAxisAngle > 360) {
+		} else if (xAxisAngle > 180) {
 			xAxisAngle -= 360;
 		}
 	}
@@ -128,10 +129,10 @@ void setAngleForRotation(int incr) {
 
 		yAxisAngle += incr;
 
-		if (yAxisAngle < 0) {
+		if (yAxisAngle < -180) {
 			yAxisAngle += 360;
 		}
-		else if (yAxisAngle > 360) {
+		else if (yAxisAngle > 180) {
 			yAxisAngle -= 360;
 		}
 	}
@@ -139,16 +140,21 @@ void setAngleForRotation(int incr) {
 
 		zAxisAngle += incr;
 
-		if (zAxisAngle < 0) {
+		if (zAxisAngle < -180) {
 			zAxisAngle += 360;
 		}
-		else if (zAxisAngle > 360) {
+		else if (zAxisAngle > 180) {
 			zAxisAngle -= 360;
 		}
 	}
+	else {
+		selectionRadius += incr > 0 ? 0.1 : -0.1;
 
-	doMeshDeform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
+		cout << selectionRadius << endl;
+	}
 
+	if (!deformedSelectedVertices.empty() && !fixedSelectedVertices.empty())
+		doMeshDeform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
 }
 
 //Scroll event handler
@@ -173,34 +179,35 @@ void passiveMouseFunc(int x, int y) {
 	float dist;
 	hoveredIntersectionPoint = TriangleIntersect::intersect(r, 0.001,dist,mesh);
 
-	Surface_mesh::Face_container container = deformableMesh->mesh.faces();
-	Surface_mesh::Face_iterator face_iter;
-	Surface_mesh::Vertex_around_face_circulator vafc, vafc_end;
-	int f_i = 0;
+	for (auto f : mesh->faces()) {
 
-	for (face_iter = deformableMesh->mesh.faces_begin(); face_iter != mesh->faces_end(); ++face_iter) {
-		vafc = mesh->vertices(*face_iter);
-		vafc_end = vafc;
+		for (auto v : mesh->vertices(f)) {
 
-		do {
-			Surface_mesh::Vertex v = *vafc;
 			Vector3f p = mesh->position(v);
-
 			float dist = (p - hoveredIntersectionPoint).norm();
+
 			if (dist < selectionRadius) {
 				if (isModeDeformedSelection) {
 					if (find(deformedSelectedVertices.begin(), deformedSelectedVertices.end(), v.idx()) == deformedSelectedVertices.end()) {
-						deformedSelectedVertices.push_back(v.idx());
+						if (find(fixedSelectedVertices.begin(), fixedSelectedVertices.end(), v.idx()) == fixedSelectedVertices.end()) {
+							deformedSelectedVertices.push_back(v.idx());
+						}
 					}
 				}
 				else if (isModeFixedSelecton) {
 					if (find(fixedSelectedVertices.begin(), fixedSelectedVertices.end(), v.idx()) == fixedSelectedVertices.end()) {
-						fixedSelectedVertices.push_back(v.idx());
+						if(find(deformedSelectedVertices.begin(), deformedSelectedVertices.end(), v.idx()) == deformedSelectedVertices.end()) {
+							fixedSelectedVertices.push_back(v.idx());
+						}
 					}
 				}
+				else if (isModeErase) {
+					deformedSelectedVertices.erase(remove(deformedSelectedVertices.begin(), deformedSelectedVertices.end(), v.idx()),deformedSelectedVertices.end());
+					fixedSelectedVertices.erase(remove(fixedSelectedVertices.begin(), fixedSelectedVertices.end(), v.idx()),fixedSelectedVertices.end());
+				}
+
 			}
-		} while (++vafc != vafc_end);
-		f_i++;
+		}
 	}
 	
 	glutPostRedisplay();
@@ -246,10 +253,10 @@ void motionFunc(int x, int y)
 void keyboardUpFunc(unsigned char key, int x, int y) {
 	switch (key)
 	{
-	case 'd':
+	case 'h':
 		isModeDeformedSelection = false;
 		break;
-	case 'i':
+	case 'f':
 		isModeFixedSelecton = false;
 		break;
 	case 'x':
@@ -261,6 +268,8 @@ void keyboardUpFunc(unsigned char key, int x, int y) {
 	case 'z':
 		isModeRotateZ = false;
 		break;
+	case 'e':
+		isModeErase = false;
 	}
 }
 // This function is called whenever a "Normal" key press is received.
@@ -279,10 +288,10 @@ void keyboardFunc(unsigned char key, int x, int y)
 			colors[i] = Vector3f(0.7, 0.7, 0.7);
 		}
 		break;
-	case 'd':
+	case 'h':
 		isModeDeformedSelection = isModeFixedSelecton ? false : true;
 		break;
-	case 'i':
+	case 'f':
 		isModeFixedSelecton = isModeDeformedSelection ? false : true;
 		break;
 	case 'x':
@@ -296,6 +305,10 @@ void keyboardFunc(unsigned char key, int x, int y)
 		break;
 	case 'l':
 		isModeLoop = !isModeLoop;
+		cout << "Loop Mode : " << isModeLoop << endl;
+		break;
+	case 'e':
+		isModeErase = true;
 		break;
 	default:
 		cout << "Unhandled key press " << key << "." << endl;
@@ -382,6 +395,9 @@ void makeDisplayLists()
 
 }
 
+void displayVertexBuffers() {
+
+}
 // This function is responsible for displaying the object.
 void drawScene(void)
 {
@@ -421,37 +437,20 @@ void drawScene(void)
 	// glutSolidTeapot(1.0);
 
 	glEnable(GL_COLOR_MATERIAL);
-
-	Surface_mesh::Face_container container = deformableMesh->mesh.faces();
-	Surface_mesh::Face_iterator face_iter;
-	Surface_mesh::Vertex_around_face_circulator vafc, vafc_end;
 	int f_i = 0;
 
-	for (face_iter = deformableMesh->mesh.faces_begin(); face_iter != mesh->faces_end(); ++face_iter) {
-		vafc = mesh->vertices(*face_iter);
-		vafc_end = vafc;
-
+	for (auto f : mesh->faces()) {
 		glBegin(GL_TRIANGLES);
-
-		do {
-			Surface_mesh::Vertex v = *vafc;
+		for (auto v : mesh->vertices(f)) {
 			Vector3f p = mesh->position(v);
 			Vector3f n = mesh->compute_vertex_normal(v);
 
-			glNormal3d(n.x(),n.y(), n.z());
+			glNormal3d(n.x(), n.y(), n.z());
 			glColor3f(colors[f_i].x(), colors[f_i].y(), colors[f_i].z());
 			glVertex3d(p.x(), p.y(), p.z());
-
-		} while (++vafc != vafc_end);
-
+		}
 		glEnd();
-
-
-		vafc = mesh->vertices(*face_iter);
-		vafc_end = vafc;
-
-		do {
-			Surface_mesh::Vertex v = *vafc;
+		for (auto v : mesh->vertices(f)) {
 			Vector3f p = mesh->position(v);
 
 			glPushMatrix();
@@ -472,10 +471,7 @@ void drawScene(void)
 			glTranslatef(p.x(), p.y(), p.z());
 			glutSolidSphere(0.02, 5, 5);
 			glPopMatrix();
-
-		} while (++vafc != vafc_end);
-
-
+		}
 		f_i++;
 	}
 
