@@ -27,6 +27,8 @@ private:
 	
 	vector<Matrix3f> frame_rotated;
 	vector<Matrix3f> frame_origin;
+	VectorXf PV1, PV2;
+	MatrixX3f PD3;
 
 	vector<float> localDepth;
 
@@ -37,13 +39,13 @@ private:
 	void get_conformal(vector<int>& fixed_ids, vector<int>& handle_ids,
 		VectorXf& theta_initial, float theta_input, MatrixXf& out);
 
-	float get_h_field(float t);
-	Matrix3f get_scaling_matrix();
-	Matrix3f quaternion2rotationMatrix(Vector4f quaternion);
-	MatrixX4f orthoParamsToQuarternion(MatrixX3f orthoParams);
-	Vector4f orthoParamsToQuarternion(Vector3f orthoParams);
-	Vector4f conformalParamsToQuaternion(Vector3f conformalParams);
-	vector<float> computeInternalDistances();
+	float get_h_field(const int vid, const float t);
+	Matrix3f get_scaling_matrix(const int vid, const float t0, const float t1);
+	Matrix3f quaternion2rotationMatrix(const Vector4f &quaternion);
+	MatrixX4f orthoParamsToQuarternion(const MatrixX3f &orthoParams);
+	Vector4f orthoParamsToQuarternion(const Vector3f &orthoParams);
+	Vector4f conformalParamsToQuaternion(const Vector3f &conformalParams);
+	vector<float> computeInternalDistances(const Surface_mesh &compute_mesh);
 
 };
 
