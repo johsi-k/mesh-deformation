@@ -46,17 +46,43 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh(*(new
 	igl::principal_curvature<MatrixX3f, MatrixX3i, MatrixX3f, MatrixX3f, VectorXf, VectorXf>
 		(V, F, PD1, PD2, PV1, PV2);
 
-	for (auto e : _original.edges()) {
-		const int eid = e.idx();
+	float total_e_p, total_e_m = 0;
+
+	for (auto v : _original.vertices()) {
+		const int vid = v.idx();
 		Matrix3f m_frame(3, 3);
 
-		m_frame.row(0) = PD1.row(eid);
-		m_frame.row(1) = PD2.row(eid);
-		m_frame.row(2) = PD2.row(eid).cross(PD1.row(eid));
+		m_frame.row(0) = PD1.row(vid);
+		m_frame.row(1) = PD2.row(vid);
+		m_frame.row(2) = PD1.row(vid).cross(PD2.row(vid));
+
+		Point pos = _original.position(v).normalized();
+
+		cout << v.idx() << ": " << m_frame.row(2) << " | " << pos.x() << ", " << pos.y() << ", " << pos.z() << endl;
+
+		float e_p = ((Vector3f)m_frame.row(2) + _original.position(v).normalized()).squaredNorm();
+		float e_m = ((Vector3f)m_frame.row(2) - _original.position(v).normalized()).squaredNorm();
+		total_e_p += e_p;
+		total_e_m += e_m;
 
 		this->frame_origin.push_back(m_frame);
 		this->frame_rotated.push_back(m_frame);
 	}
+
+	cout << "PD3 error_m: " << total_e_m << endl;
+	cout << "PD3 error_p: " << total_e_p << endl;
+
+	//for (auto e : _original.edges()) {
+	//	const int eid = e.idx();
+	//	Matrix3f m_frame(3, 3);
+
+	//	m_frame.row(0) = PD1.row(eid);
+	//	m_frame.row(1) = PD2.row(eid);
+	//	m_frame.row(2) = PD2.row(eid).cross(PD1.row(eid));
+
+	//	this->frame_origin.push_back(m_frame);
+	//	this->frame_rotated.push_back(m_frame);
+	//}
 
 	vector<int> fixed_ids;
 	vector<int> handle_ids;
@@ -99,7 +125,7 @@ void DeformableMesh::deform_mesh(
 		params.col(0) = ortho;
 	}
 	else {
-		// eq2(*mesh0, conformal);
+		//get_conformal(params);
 	}
 
 	const MatrixX4f quat = orthoParamsToQuarternion(params);
@@ -120,7 +146,7 @@ bool contains(const vector<T> &v, T t) {
 	return std::find(v.begin(), v.end(), t) != v.end();
 }
 
-void DeformableMesh::reconstruct_mesh(vector<int> fixed_ids) {
+void DeformableMesh::reconstruct_mesh(vector<int> &fixed_ids) {
 
 	typedef SparseMatrix<float> MatrixType;
 	typedef SparseLU< MatrixType > SolverType;
@@ -191,7 +217,7 @@ void DeformableMesh::reconstruct_mesh(vector<int> fixed_ids) {
 		eid++;
 	}
 
-	MatrixType A(ne, nv - 4);
+	MatrixType A(ne, nv - fixed_ids.size());
 	A.setFromTriplets(A_entries.begin(), A_entries.end());
 	const MatrixType At = A.transpose();
 	const MatrixType AA = At * A;
@@ -231,6 +257,11 @@ void DeformableMesh::reconstruct_mesh(vector<int> fixed_ids) {
 	}
 	cout << "total error: " << total_error << endl;
 	cout << _original.vertices_size() << endl;
+}
+
+void DeformableMesh::get_conformal(vector<int>& fixed_ids, vector<int>& handle_ids,
+	VectorXf& theta_initial, float theta_input, MatrixXf& out) {
+
 }
 
 void DeformableMesh::get_orthos(vector<int>& fixed_ids, vector<int>& handle_ids,
