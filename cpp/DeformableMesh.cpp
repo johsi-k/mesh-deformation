@@ -50,19 +50,7 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh(*(new
 
 	for (auto v : _original.vertices()) {
 		const int vid = v.idx();
-		Matrix3f m_frame(3, 3);
-		//if (PD1.row(vid).squaredNorm() != 1.) {
-			//m_frame = Matrix3f::Identity();
-			m_frame << 
-				0, 0, 1,
-				1, 0, 0,
-				0, 1, 0;
-		/*}
-		else {
-			m_frame.row(0) = PD1.row(vid);
-			m_frame.row(1) = PD2.row(vid);
-			m_frame.row(2) = PD1.row(vid).cross(PD2.row(vid));
-		}*/
+		Matrix3f m_frame = Matrix3f::Identity();
 
 		this->PD3.row(vid) = PD1.row(vid).cross(PD2.row(vid));
 
@@ -166,8 +154,8 @@ void DeformableMesh::reconstruct_mesh(const vector<int> &fixed_ids) {
 	int eid = 0;
 	for (Surface_mesh::Edge edge : new_edges) {
 
-		const Vertex v0 = _original.vertex(edge, 0);
-		const Vertex v1 = _original.vertex(edge, 1);
+		const Vertex v0 = _original.vertex(edge, 1);
+		const Vertex v1 = _original.vertex(edge, 0);
 		const int v0_idx = v0.idx();
 		const int v1_idx = v1.idx();
 
@@ -255,8 +243,9 @@ void DeformableMesh::get_orthos(const vector<int>& fixed_ids, const vector<int>&
 		float Wjj = 0; // weights on the diagonal
 
 					   // if vertex index is found in handle or fixed group, set coefficients to 1
-		bool is_handle_or_fixed = (find(handle_ids.begin(), handle_ids.end(), j) != handle_ids.end()) ||
-			(find(fixed_ids.begin(), fixed_ids.end(), j) != fixed_ids.end());
+		//bool is_handle_or_fixed = (find(handle_ids.begin(), handle_ids.end(), j) != handle_ids.end()) ||
+		//	(find(fixed_ids.begin(), fixed_ids.end(), j) != fixed_ids.end());
+		const bool is_handle_or_fixed = contains(handle_ids, j) || contains(fixed_ids, j);
 
 		if (is_handle_or_fixed) {
 			entries.push_back(Triplet(j, j, 1.0f));
@@ -323,7 +312,7 @@ void DeformableMesh::get_orthos(const vector<int>& fixed_ids, const vector<int>&
 		b[i] = theta_initial[i];
 	}
 
-	for (auto i : handle_ids) {
+	for (int i : handle_ids) {
 		b[i] = theta_input;
 	}
 
