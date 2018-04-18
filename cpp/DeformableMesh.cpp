@@ -24,7 +24,7 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh(*(new
 	MatrixX3i F(nf, 3);
 
 	for (auto v : _original.vertices()) {
-		V.row(v.idx()) = _original.position(v).matrix();
+		V.row(v.idx()) = _original.position(v).matrix() + Vector3f(10000, 10000, 10000);
 	}
 
 	for (Surface_mesh::Face f : _original.faces()) {
@@ -46,7 +46,9 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh(*(new
 
 	this->PV1 = PV1;
 	this->PV2 = PV2;
-	this->PD3.resize(_original.vertices_size(), 3);
+	this->PD1 = new MatrixX3f(_original.vertices_size(), 3);
+	this->PD2 = new MatrixX3f(_original.vertices_size(), 3);
+	this->PD3 = new MatrixX3f(_original.vertices_size(), 3);
 
 	for (auto v : _original.vertices()) {
 		const int vid = v.idx();
@@ -64,13 +66,44 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh(*(new
 			m_frame.row(2) = PD1.row(vid).cross(PD2.row(vid));
 		}*/
 
-		this->PD3.row(vid) = PD1.row(vid).cross(PD2.row(vid));
+		float n1 = PV1[vid];
+		float n2 = PV2[vid];
+		Vector3f v1 = PD1.row(vid);
+		Vector3f v2 = PD2.row(vid);
+
+		if (n1 < 0) {
+			n1 *= -1;
+			v1 *= -1;
+		}
+
+		if (n2 < 0) {
+			n2 *= -1;
+			v2 *= -1;
+		}
+
+		if (n1 > n2) {
+			this->PD1->row(vid) = v1;
+			this->PD2->row(vid) = v2;
+		}
+		else {
+			this->PD1->row(vid) = v2;
+			this->PD2->row(vid) = v1;
+		}
+
+		this->PD3->row(vid) = this->PD1->row(vid).cross(this->PD2->row(vid));
 
 		this->frame_origin.push_back(m_frame);
 		this->frame_rotated.push_back(m_frame);
 	}
 
 	this->computeInternalDistances(this->_original, this->localDepth);
+}
+
+void DeformableMesh::getCurvature(const int index, Vector3f &e1, Vector3f &e2, Vector3f &e3) {
+
+	e1 = PD1->row(index);
+	e2 = PD2->row(index);
+	e3 = PD3->row(index);
 }
 
 void DeformableMesh::deform_mesh( const vector<int> &fixed_ids, const vector<int> &handle_ids,

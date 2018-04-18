@@ -33,6 +33,7 @@ bool isModeRotateY = false;
 bool isModeRotateZ = false;
 bool isModeWireframe = false;
 bool isModeVolumePreserve = true;
+bool isModeCurvature = false;
 float selectionRadius = 0.2;
 
 //Angles for rotation
@@ -326,6 +327,9 @@ void keyboardFunc(unsigned char key, int x, int y)
 	case 'e':
 		isModeErase = true;
 		break;
+	case 'c':
+		isModeCurvature = !isModeCurvature;
+		break;
 	default:
 		cout << "Unhandled key press " << key << "." << endl;
 	}
@@ -411,8 +415,12 @@ void makeDisplayLists()
 
 }
 
-void displayVertexBuffers() {
-
+void renderLine(Vector3f color, Vector3f A, Vector3f B) {
+	glBegin(GL_LINES);
+	glColor3f(color.x(), color.y(), color.z());
+	glVertex3f(A.x(), A.y(), A.z());
+	glVertex3f(B.x(), B.y(), B.z());
+	glEnd();
 }
 // This function is responsible for displaying the object.
 void drawScene(void)
@@ -471,21 +479,31 @@ void drawScene(void)
 
 			glPushMatrix();
 
-			float dist = (p - hoveredIntersectionPoint).norm();
-			if (dist < selectionRadius) {
-				glColor3f(1, 0, 1);
-			}
-			else if (find(deformedSelectedVertices.begin(), deformedSelectedVertices.end(), v.idx()) != deformedSelectedVertices.end()) {
-				glColor3f(0, 0, 1);
-			}
-			else if (find(fixedSelectedVertices.begin(), fixedSelectedVertices.end(), v.idx()) != fixedSelectedVertices.end()) {
-				glColor3f(0, 1, 0);
+			if (isModeCurvature) {
+				//Vector3f e1, e2, e3;
+				//deformableMesh->getCurvature(v.idx(), e1, e2, e3);
+				//renderLine(Vector3f(0,0,1), p, p + e1);
+				//renderLine(Vector3f(0,1,0), p, p + e2);
+				//renderLine(Vector3f(1,0,0), p, p + e3);
 			}
 			else {
-				glColor3f(1, 1, 1);
+				float dist = (p - hoveredIntersectionPoint).norm();
+				if (dist < selectionRadius) {
+					glColor3f(1, 0, 1);
+				}
+				else if (find(deformedSelectedVertices.begin(), deformedSelectedVertices.end(), v.idx()) != deformedSelectedVertices.end()) {
+					glColor3f(0, 0, 1);
+				}
+				else if (find(fixedSelectedVertices.begin(), fixedSelectedVertices.end(), v.idx()) != fixedSelectedVertices.end()) {
+					glColor3f(0, 1, 0);
+				}
+				else {
+					glColor3f(1, 1, 1);
+				}
+				glTranslatef(p.x(), p.y(), p.z());
+				glutSolidSphere(0.02, 5, 5);
 			}
-			glTranslatef(p.x(), p.y(), p.z());
-			glutSolidSphere(0.02, 5, 5);
+			
 			glPopMatrix();
 		}
 		f_i++;
