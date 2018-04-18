@@ -72,17 +72,7 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh(*(new
 	cout << "PD3 error_m: " << total_e_m << endl;
 	cout << "PD3 error_p: " << total_e_p << endl;
 
-	//for (auto e : _original.edges()) {
-	//	const int eid = e.idx();
-	//	Matrix3f m_frame(3, 3);
-
-	//	m_frame.row(0) = PD1.row(eid);
-	//	m_frame.row(1) = PD2.row(eid);
-	//	m_frame.row(2) = PD2.row(eid).cross(PD1.row(eid));
-
-	//	this->frame_origin.push_back(m_frame);
-	//	this->frame_rotated.push_back(m_frame);
-	//}
+	this->localDepth = this->computeInternalDistances();
 
 	vector<int> fixed_ids;
 	vector<int> handle_ids;
@@ -135,10 +125,15 @@ void DeformableMesh::deform_mesh(
 		this->frame_rotated[i] = rotationMatrix * this->frame_origin[i];
 	}
 
-	////const Matrix3f scaleMatrix = get_scaling_matrix();
-
 	reconstruct_mesh(fixed_ids);
 
+	vector<float> deformDepth = this->computeInternalDistances();
+
+	for (auto v : mesh.vertices()) {
+		const Matrix3f scaleMatrix = get_scaling_matrix();
+
+		mesh.position(v) = scaleMatrix * mesh.position(v);
+	}
 }
 
 template <class T>
@@ -390,6 +385,8 @@ float DeformableMesh::get_h_field(float t) {
 
 // TODO: find out what is t0, t1, h0, h1
 Matrix3f DeformableMesh::get_scaling_matrix() {
+
+	return Matrix3f::Identity();
 
 	const float t0 = 0;
 	const float h0 = get_h_field(t0);
