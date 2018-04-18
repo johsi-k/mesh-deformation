@@ -32,6 +32,7 @@ bool isModeRotateX = false;
 bool isModeRotateY = false;
 bool isModeRotateZ = false;
 bool isModeWireframe = false;
+bool isModeVolumePreserve = true;
 float selectionRadius = 0.2;
 
 //Angles for rotation
@@ -107,7 +108,7 @@ void loopAngleUpdate(int x) {
 	}
 
 	if (isModeLoop) {
-		xAxisAngle = isBacking ? xAxisAngle - 5 : xAxisAngle + 5;
+		xAxisAngle = isBacking ? xAxisAngle - 1 : xAxisAngle + 1;
 		doMeshDeform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
 		glutPostRedisplay();
 	}
@@ -165,11 +166,11 @@ void mouseWheel(int button, int dir, int x, int y) {
 
 	//Scroll up
 	if (dir > 0) {
-		setAngleForRotation(5);
+		setAngleForRotation(1);
 	}
 	//Scroll down
 	else {
-		setAngleForRotation(-5);
+		setAngleForRotation(-1);
 	}
 }
 
@@ -273,6 +274,7 @@ void keyboardUpFunc(unsigned char key, int x, int y) {
 		isModeErase = false;
 	}
 }
+
 // This function is called whenever a "Normal" key press is received.
 void keyboardFunc(unsigned char key, int x, int y)
 {
@@ -315,6 +317,11 @@ void keyboardFunc(unsigned char key, int x, int y)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		else
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		cout << "Wireframe mode : " << isModeWireframe << endl;
+		break;
+	case 'v':
+		isModeVolumePreserve = !isModeVolumePreserve;
+		cout << "Volume preserve mode : " << isModeVolumePreserve << endl;
 		break;
 	case 'e':
 		isModeErase = true;
@@ -515,7 +522,6 @@ void initRendering()
 // w, h - width and height of the window in pixels.
  void reshapeFunc(int w, int h)
     {
-
 	    width = w;
 		height = h;
         camera.SetDimensions(w,h);
@@ -548,8 +554,7 @@ void loadInput(int argc, char **argv)
 //Function to deform the vertices (DOM & JOHSI, yall do stuff here)
 void doMeshDeform(const Vector3f &angles) {
 	const VectorXf init = VectorXf::Zero(mesh->vertices_size(), 1);
-
-	deformableMesh->deform_mesh(fixedSelectedVertices, deformedSelectedVertices, init, (angles.x() * M_PI / 180));
+	deformableMesh->deform_mesh(fixedSelectedVertices, deformedSelectedVertices, init, (angles.x() * M_PI / 180), isModeVolumePreserve);
 }
 
 // Main routine.

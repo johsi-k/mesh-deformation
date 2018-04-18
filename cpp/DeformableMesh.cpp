@@ -74,7 +74,7 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh(*(new
 }
 
 void DeformableMesh::deform_mesh( const vector<int> &fixed_ids, const vector<int> &handle_ids,
-	const VectorXf &theta_initial, const float theta_input )
+	const VectorXf &theta_initial, const float theta_input, const bool preserveVolume )
 {
 	MatrixX3f params(_original.vertices_size(), 3);
 	const bool is_one_axis = true;
@@ -101,16 +101,18 @@ void DeformableMesh::deform_mesh( const vector<int> &fixed_ids, const vector<int
 
 	reconstruct_mesh(fixed_ids);
 	
-	vector<float> deformDepth;
-	this->computeInternalDistances(this->mesh, deformDepth);
 
-	for (auto v : mesh.vertices()) {
-		const Matrix3f scaleMatrix = get_scaling_matrix( v.idx(), localDepth[v.idx()], deformDepth[v.idx()] );
+	if (preserveVolume) {
+		vector<float> deformDepth;
+		this->computeInternalDistances(this->mesh, deformDepth);
 
-		this->frame_rotated[v.idx()] = scaleMatrix * this->frame_rotated[v.idx()];
-	}
+		for (auto v : mesh.vertices()) {
+			const Matrix3f scaleMatrix = get_scaling_matrix(v.idx(), localDepth[v.idx()], deformDepth[v.idx()]);
 
-	reconstruct_mesh(fixed_ids);
+			this->frame_rotated[v.idx()] = scaleMatrix * this->frame_rotated[v.idx()];
+		}
+		reconstruct_mesh(fixed_ids);
+	}	
 }
 
 template <class T>
@@ -380,7 +382,6 @@ Matrix3f DeformableMesh::quaternion2rotationMatrix(const Vector4f &quaternion) {
 		1 - 2 * x*x - 2 * y*y;
 
 	return rotationMatrix;
-
 }
 
 // eqn 25
