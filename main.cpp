@@ -540,7 +540,7 @@ void loadInput(int argc, char **argv)
 void doMeshDeform(const Vector3f &angles) {
 	const VectorXf init = VectorXf::Zero(mesh->vertices_size(), 1);
 
-	deformableMesh->deform_mesh(deformedSelectedVertices, fixedSelectedVertices, init, (angles.x() * M_PI / 180));
+	deformableMesh->deform_mesh(fixedSelectedVertices, deformedSelectedVertices, init, (angles.x() * M_PI / 180));
 }
 
 // Main routine.

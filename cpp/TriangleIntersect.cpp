@@ -4,25 +4,15 @@ Vector3f TriangleIntersect::intersect(Ray r, float tmin, float &distance, Surfac
 	int index = INT_MAX;
 	float t = FLT_MAX;
 
-	Surface_mesh::Face_container container = mesh->faces();
-	Surface_mesh::Face_iterator face_iter;
-	Surface_mesh::Vertex_around_face_circulator vafc, vafc_end;
-
 	int f_i = 0;
 
-	for (face_iter = mesh->faces_begin(); face_iter != mesh->faces_end(); ++face_iter) {
-		vafc = mesh->vertices(*face_iter);
-		vafc_end = vafc;
-
+	for (auto f : mesh->faces()) {
 		Vector3f points[3];
 		int i = 0;
-		do {
-			Surface_mesh::Vertex v = *vafc;
+		for (auto v : mesh->vertices(f)) {
 			points[i] = mesh->position(v);
 			i++;
-
-		} while (++vafc != vafc_end);
-
+		}
 		Matrix3f t_m = generateMatrix3fFromVectors(points[0] - points[1], points[0] - points[2], points[0] - r.getOrigin());
 		Matrix3f beta_m = generateMatrix3fFromVectors(points[0] - r.getOrigin(), points[0] - points[2], r.getDirection());
 		Matrix3f gamma_m = generateMatrix3fFromVectors(points[0] - points[1], points[0] - r.getOrigin(), r.getDirection());
@@ -49,7 +39,6 @@ Vector3f TriangleIntersect::intersect(Ray r, float tmin, float &distance, Surfac
 			t = t_face;
 			index = f_i - 1;
 		}
-
 	}
 
 	distance = r.pointAtParameter(t).norm();
