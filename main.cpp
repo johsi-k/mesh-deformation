@@ -26,6 +26,7 @@ int hoveredTriangleIndex = INT_MAX;
 //States to select triangles for mesh deformation or rotate them
 bool isModeDeformedSelection = false;
 bool isModeFixedSelecton = false;
+bool isModeLoop = false;
 bool isModeRotateX = false;
 bool isModeRotateY = false;
 bool isModeRotateZ = false;
@@ -92,9 +93,23 @@ void displayString(float x, float y, string &text, Vector3f color) {
 	glPopMatrix();
 }
 
-//TODO: fill in rotation method
-void rotate(Vector3f angle) {
+bool isBacking = false;
+void loopAngleUpdate(int x) {
 
+	if (xAxisAngle == 360) {
+		isBacking = true;
+	}
+	else if (xAxisAngle == 0) {
+		isBacking = false;
+	}
+
+	if (isModeLoop) {
+		xAxisAngle = isBacking ? xAxisAngle - 5 : xAxisAngle + 5;
+		deform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
+		glutPostRedisplay();
+	}
+
+	glutTimerFunc(100, loopAngleUpdate, 0);
 }
 
 //Function to monitor rotation
@@ -131,11 +146,15 @@ void setAngleForRotation(int incr) {
 		}
 	}
 
-	rotate(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
+	deform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
+
 }
 
 //Scroll event handler
 void mouseWheel(int button, int dir, int x, int y) {
+
+	isModeLoop = false;
+
 	//Scroll up
 	if (dir > 0) {
 		setAngleForRotation(5);
@@ -222,15 +241,12 @@ void keyboardUpFunc(unsigned char key, int x, int y) {
 		break;
 	case 'x':
 		isModeRotateX = false;
-		deform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
 		break;
 	case 'y':
 		isModeRotateY = false;
-		deform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
 		break;
 	case 'z':
 		isModeRotateZ = false;
-		deform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
 		break;
 	}
 }
@@ -264,6 +280,9 @@ void keyboardFunc(unsigned char key, int x, int y)
 		break;
 	case 'z':
 		isModeRotateZ = true;
+		break;
+	case 'l':
+		isModeLoop = !isModeLoop;
 		break;
 	default:
 		cout << "Unhandled key press " << key << "." << endl;
@@ -527,14 +546,14 @@ void deform(Vector3f angles) {
 		if (find(deformedSelectionTriangles.begin(), deformedSelectionTriangles.end(), f_i) != deformedSelectionTriangles.end()) {
 			do {
 				Surface_mesh::Vertex v = *vafc;
-				fixed_ids.push_back(v.idx());
+				handle_ids.push_back(v.idx());
 			} while (++vafc != vafc_end);
 		}
 
 		if (find(fixedSelectionTriangles.begin(), fixedSelectionTriangles.end(), f_i) != fixedSelectionTriangles.end()) {
 			do {
 				Surface_mesh::Vertex v = *vafc;
-				handle_ids.push_back(v.idx());
+				fixed_ids.push_back(v.idx());
 			} while (++vafc != vafc_end);
 		}
 
@@ -546,15 +565,6 @@ void deform(Vector3f angles) {
 
 	fixed_ids.assign(fixed.begin(), fixed.end());
 	handle_ids.assign(handle.begin(), handle.end());
-
-	for (int v : fixed_ids) {
-		cout << "fixed " << v << endl;
-	}
-	
-	for (int v : handle_ids) {
-		cout << "handle " << v << endl;
-	}
-
 	
 	VectorXf init = VectorXf::Zero(mesh->vertices_size(), 1);
 	cout << init.rows() << " " << init.cols() << endl;
@@ -606,6 +616,9 @@ int main(int argc, char** argv)
 	glutMotionFunc(motionFunc);
 	glutPassiveMotionFunc(passiveMouseFunc);
 	glutMouseWheelFunc(mouseWheel);
+
+	//Setup for loop function
+	glutTimerFunc(100, loopAngleUpdate, 0);
 	
 	//Draw the axes
 	makeDisplayLists();
