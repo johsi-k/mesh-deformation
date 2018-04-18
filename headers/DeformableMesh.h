@@ -20,7 +20,9 @@ public:
 	Surface_mesh &mesh;
 
 	void deform_mesh(const vector<int> &fixed_ids, const vector<int> &handle_ids, 
-		const VectorXf &theta_initial, const float theta_input);
+		const VectorXf &theta_initial, const float theta_input, const bool preserveVolume);
+	void resetMesh();
+	void getCurvature(const int index, Vector3f &e1, Vector3f &e2, Vector3f &e3);
 
 private:
 
@@ -29,7 +31,7 @@ private:
 	vector<Matrix3f> frame_rotated;
 	vector<Matrix3f> frame_origin;
 	VectorXf PV1, PV2;
-	MatrixX3f PD3;
+	MatrixX3f *PD1, *PD2, *PD3;
 
 	vector<float> localDepth;
 

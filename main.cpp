@@ -31,6 +31,9 @@ bool isModeLoop = false;
 bool isModeRotateX = false;
 bool isModeRotateY = false;
 bool isModeRotateZ = false;
+bool isModeWireframe = false;
+bool isModeVolumePreserve = true;
+bool isModeCurvature = false;
 float selectionRadius = 0.2;
 
 //Angles for rotation
@@ -106,7 +109,7 @@ void loopAngleUpdate(int x) {
 	}
 
 	if (isModeLoop) {
-		xAxisAngle = isBacking ? xAxisAngle - 5 : xAxisAngle + 5;
+		xAxisAngle = isBacking ? xAxisAngle - 1 : xAxisAngle + 1;
 		doMeshDeform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
 		glutPostRedisplay();
 	}
@@ -164,11 +167,11 @@ void mouseWheel(int button, int dir, int x, int y) {
 
 	//Scroll up
 	if (dir > 0) {
-		setAngleForRotation(5);
+		setAngleForRotation(1);
 	}
 	//Scroll down
 	else {
-		setAngleForRotation(-5);
+		setAngleForRotation(-1);
 	}
 }
 
@@ -272,6 +275,7 @@ void keyboardUpFunc(unsigned char key, int x, int y) {
 		isModeErase = false;
 	}
 }
+
 // This function is called whenever a "Normal" key press is received.
 void keyboardFunc(unsigned char key, int x, int y)
 {
@@ -283,6 +287,7 @@ void keyboardFunc(unsigned char key, int x, int y)
 	case 'r':
 		deformedSelectedVertices.clear();
 		fixedSelectedVertices.clear();
+		deformableMesh->resetMesh();
 
 		for (int i = 0; i < colors.size(); i++) {
 			colors[i] = Vector3f(0.7, 0.7, 0.7);
@@ -307,8 +312,23 @@ void keyboardFunc(unsigned char key, int x, int y)
 		isModeLoop = !isModeLoop;
 		cout << "Loop Mode : " << isModeLoop << endl;
 		break;
+	case 'w':
+		isModeWireframe = !isModeWireframe;
+		if (isModeWireframe)
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		else
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		cout << "Wireframe mode : " << isModeWireframe << endl;
+		break;
+	case 'v':
+		isModeVolumePreserve = !isModeVolumePreserve;
+		cout << "Volume preserve mode : " << isModeVolumePreserve << endl;
+		break;
 	case 'e':
 		isModeErase = true;
+		break;
+	case 'c':
+		isModeCurvature = !isModeCurvature;
 		break;
 	default:
 		cout << "Unhandled key press " << key << "." << endl;
@@ -395,8 +415,12 @@ void makeDisplayLists()
 
 }
 
-void displayVertexBuffers() {
-
+void renderLine(Vector3f color, Vector3f A, Vector3f B) {
+	glBegin(GL_LINES);
+	glColor3f(color.x(), color.y(), color.z());
+	glVertex3f(A.x(), A.y(), A.z());
+	glVertex3f(B.x(), B.y(), B.z());
+	glEnd();
 }
 // This function is responsible for displaying the object.
 void drawScene(void)
@@ -455,21 +479,31 @@ void drawScene(void)
 
 			glPushMatrix();
 
-			float dist = (p - hoveredIntersectionPoint).norm();
-			if (dist < selectionRadius) {
-				glColor3f(1, 0, 1);
-			}
-			else if (find(deformedSelectedVertices.begin(), deformedSelectedVertices.end(), v.idx()) != deformedSelectedVertices.end()) {
-				glColor3f(0, 0, 1);
-			}
-			else if (find(fixedSelectedVertices.begin(), fixedSelectedVertices.end(), v.idx()) != fixedSelectedVertices.end()) {
-				glColor3f(0, 1, 0);
+			if (isModeCurvature) {
+				//Vector3f e1, e2, e3;
+				//deformableMesh->getCurvature(v.idx(), e1, e2, e3);
+				//renderLine(Vector3f(0,0,1), p, p + e1);
+				//renderLine(Vector3f(0,1,0), p, p + e2);
+				//renderLine(Vector3f(1,0,0), p, p + e3);
 			}
 			else {
-				glColor3f(1, 1, 1);
+				float dist = (p - hoveredIntersectionPoint).norm();
+				if (dist < selectionRadius) {
+					glColor3f(1, 0, 1);
+				}
+				else if (find(deformedSelectedVertices.begin(), deformedSelectedVertices.end(), v.idx()) != deformedSelectedVertices.end()) {
+					glColor3f(0, 0, 1);
+				}
+				else if (find(fixedSelectedVertices.begin(), fixedSelectedVertices.end(), v.idx()) != fixedSelectedVertices.end()) {
+					glColor3f(0, 1, 0);
+				}
+				else {
+					glColor3f(1, 1, 1);
+				}
+				glTranslatef(p.x(), p.y(), p.z());
+				glutSolidSphere(0.02, 5, 5);
 			}
-			glTranslatef(p.x(), p.y(), p.z());
-			glutSolidSphere(0.02, 5, 5);
+			
 			glPopMatrix();
 		}
 		f_i++;
@@ -506,7 +540,6 @@ void initRendering()
 // w, h - width and height of the window in pixels.
  void reshapeFunc(int w, int h)
     {
-
 	    width = w;
 		height = h;
         camera.SetDimensions(w,h);
@@ -539,8 +572,7 @@ void loadInput(int argc, char **argv)
 //Function to deform the vertices (DOM & JOHSI, yall do stuff here)
 void doMeshDeform(const Vector3f &angles) {
 	const VectorXf init = VectorXf::Zero(mesh->vertices_size(), 1);
-
-	deformableMesh->deform_mesh(fixedSelectedVertices, deformedSelectedVertices, init, (angles.x() * M_PI / 180));
+	deformableMesh->deform_mesh(fixedSelectedVertices, deformedSelectedVertices, init, (angles.x() * M_PI / 180), isModeVolumePreserve);
 }
 
 // Main routine.
