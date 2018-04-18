@@ -40,7 +40,7 @@ int zAxisAngle = 0;
 //Vectors to store triangles currently listed for deformation
 vector<int> deformedSelectedVertices;
 vector<int> fixedSelectedVertices;
-void deform(Vector3f angles);
+void doMeshDeform(const Vector3f &angles);
 
 // You will need more global variables to implement color and position changes
 int colorCounter = 0;
@@ -106,7 +106,7 @@ void loopAngleUpdate(int x) {
 
 	if (isModeLoop) {
 		xAxisAngle = isBacking ? xAxisAngle - 5 : xAxisAngle + 5;
-		deform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
+		doMeshDeform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
 		glutPostRedisplay();
 	}
 
@@ -147,7 +147,7 @@ void setAngleForRotation(int incr) {
 		}
 	}
 
-	deform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
+	doMeshDeform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
 
 }
 
@@ -499,32 +499,6 @@ void drawScene(void)
 // Initialize OpenGL's rendering modes
 void initRendering()
 {
-	//Surface_mesh mesh;
-	//mesh->read("plane_4x4.obj");
-	//DeformableMesh dm = DeformableMesh(mesh);
-
-	//// instantiate a Surface_mesh object
-	//Surface_mesh mesh;
-
-	//// read a mesh specified as the first command line argument
-	//mesh->read(argv[1]);
-
-	//// eqn 6 test
-	//vector<int> fixed_ids;
-	//vector<int> handle_ids;
-
-	//for (int i = 0; i < 4; i++) {
-	//	fixed_ids.push_back(i);
-	//}
-	//
-	//for (int i = 12; i < 16; i++) {
-	//	handle_ids.push_back(i);
-	//}
-	//
-	//VectorXf init = VectorXf::Zero(mesh->vertices_size());
-	//VectorXf out;
-	//eqn6(mesh, fixed_ids, handle_ids, init, 0.52f, out);
-	
 	glShadeModel(GL_SMOOTH);
 	glEnable(GL_DEPTH_TEST);   // Depth testing must be turned on
 	glEnable(GL_LIGHTING);     // Enable lighting calculations
@@ -567,13 +541,10 @@ void loadInput(int argc, char **argv)
 }
 
 //Function to deform the vertices (DOM & JOHSI, yall do stuff here)
-void deform(Vector3f angles) {
-	
-	VectorXf init = VectorXf::Zero(mesh->vertices_size(), 1);
-	cout << init.rows() << " " << init.cols() << endl;
+void doMeshDeform(const Vector3f &angles) {
+	const VectorXf init = VectorXf::Zero(mesh->vertices_size(), 1);
 
 	deformableMesh->deform_mesh(deformedSelectedVertices, fixedSelectedVertices, init, (angles.x() * M_PI / 180));
-	//eqn6(mesh, fixed_ids, handle_ids, init, 0.52f, out);
 }
 
 // Main routine.

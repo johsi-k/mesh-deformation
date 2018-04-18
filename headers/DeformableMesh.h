@@ -19,7 +19,8 @@ public:
 
 	Surface_mesh &mesh;
 
-	void deform_mesh(vector<int> fixed_ids, vector<int> handle_ids, VectorXf theta_initial, float theta_input);
+	void deform_mesh(const vector<int> &fixed_ids, const vector<int> &handle_ids, 
+		const VectorXf &theta_initial, const float theta_input);
 
 private:
 
@@ -32,20 +33,20 @@ private:
 
 	vector<float> localDepth;
 
-	void reconstruct_mesh( vector<int> &fixed_ids );
+	void reconstruct_mesh( const vector<int> &fixed_ids );
 
-	void get_orthos(vector<int>& fixed_ids, vector<int>& handle_ids,
-		VectorXf& theta_initial, float theta_input, VectorXf& out);
+	void get_orthos(const vector<int>& fixed_ids, const vector<int>& handle_ids,
+		const VectorXf& theta_initial, const float theta_input, VectorXf& out);
 	void get_conformal(vector<int>& fixed_ids, vector<int>& handle_ids,
 		VectorXf& theta_initial, float theta_input, MatrixXf& out);
 
 	float get_h_field(const int vid, const float t);
 	Matrix3f get_scaling_matrix(const int vid, const float t0, const float t1);
 	Matrix3f quaternion2rotationMatrix(const Vector4f &quaternion);
-	MatrixX4f orthoParamsToQuarternion(const MatrixX3f &orthoParams);
+	void orthoParamsToQuarternion(const MatrixX3f &orthoParams, MatrixX4f &out);
 	Vector4f orthoParamsToQuarternion(const Vector3f &orthoParams);
 	Vector4f conformalParamsToQuaternion(const Vector3f &conformalParams);
-	vector<float> computeInternalDistances(const Surface_mesh &compute_mesh);
+	void computeInternalDistances(const Surface_mesh &compute_mesh, vector<float> &out);
 
 };
 
