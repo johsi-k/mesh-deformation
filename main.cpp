@@ -546,14 +546,14 @@ void deform(Vector3f angles) {
 		if (find(deformedSelectionTriangles.begin(), deformedSelectionTriangles.end(), f_i) != deformedSelectionTriangles.end()) {
 			do {
 				Surface_mesh::Vertex v = *vafc;
-				fixed_ids.push_back(v.idx());
+				handle_ids.push_back(v.idx());
 			} while (++vafc != vafc_end);
 		}
 
 		if (find(fixedSelectionTriangles.begin(), fixedSelectionTriangles.end(), f_i) != fixedSelectionTriangles.end()) {
 			do {
 				Surface_mesh::Vertex v = *vafc;
-				handle_ids.push_back(v.idx());
+				fixed_ids.push_back(v.idx());
 			} while (++vafc != vafc_end);
 		}
 
