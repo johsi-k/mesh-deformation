@@ -31,6 +31,7 @@ bool isModeLoop = false;
 bool isModeRotateX = false;
 bool isModeRotateY = false;
 bool isModeRotateZ = false;
+bool isModeWireframe = false;
 float selectionRadius = 0.2;
 
 //Angles for rotation
@@ -283,6 +284,7 @@ void keyboardFunc(unsigned char key, int x, int y)
 	case 'r':
 		deformedSelectedVertices.clear();
 		fixedSelectedVertices.clear();
+		deformableMesh->resetMesh();
 
 		for (int i = 0; i < colors.size(); i++) {
 			colors[i] = Vector3f(0.7, 0.7, 0.7);
@@ -306,6 +308,13 @@ void keyboardFunc(unsigned char key, int x, int y)
 	case 'l':
 		isModeLoop = !isModeLoop;
 		cout << "Loop Mode : " << isModeLoop << endl;
+		break;
+	case 'w':
+		isModeWireframe = !isModeWireframe;
+		if (isModeWireframe)
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		else
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		break;
 	case 'e':
 		isModeErase = true;

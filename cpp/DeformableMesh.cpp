@@ -444,3 +444,7 @@ void DeformableMesh::computeInternalDistances(const Surface_mesh &compute_mesh, 
 		out.push_back(phi_p);
 	}
 }
+
+void DeformableMesh::resetMesh() {
+	mesh = _original;
+}

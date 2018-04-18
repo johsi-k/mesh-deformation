@@ -21,6 +21,8 @@ public:
 
 	void deform_mesh(const vector<int> &fixed_ids, const vector<int> &handle_ids, 
 		const VectorXf &theta_initial, const float theta_input);
+	void resetMesh();
+
 
 private:
 
