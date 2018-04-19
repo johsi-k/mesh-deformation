@@ -20,7 +20,6 @@ using namespace Eigen;
 //Surface mesh and related color array
 Surface_mesh *mesh;
 DeformableMesh *deformableMesh;
-vector<Vector3f> colors;
 Vector3f hoveredIntersectionPoint = Vector3f(FLT_MAX, FLT_MAX, FLT_MAX);
 
 //States to select triangles for mesh deformation or rotate them
@@ -111,7 +110,6 @@ void loopAngleUpdate(int x) {
 	if (isModeLoop) {
 		xAxisAngle = isBacking ? xAxisAngle - 1 : xAxisAngle + 1;
 		doMeshDeform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
-		glutPostRedisplay();
 	}
 
 	glutTimerFunc(100, loopAngleUpdate, 0);
@@ -186,8 +184,8 @@ void passiveMouseFunc(int x, int y) {
 
 		for (auto v : mesh->vertices(f)) {
 
-			Vector3f p = mesh->position(v);
-			float dist = (p - hoveredIntersectionPoint).norm();
+			const Vector3f p = mesh->position(v);
+			const float dist = (p - hoveredIntersectionPoint).norm();
 
 			if (dist < selectionRadius) {
 				if (isModeDeformedSelection) {
@@ -288,10 +286,7 @@ void keyboardFunc(unsigned char key, int x, int y)
 		deformedSelectedVertices.clear();
 		fixedSelectedVertices.clear();
 		deformableMesh->resetMesh();
-
-		for (int i = 0; i < colors.size(); i++) {
-			colors[i] = Vector3f(0.7, 0.7, 0.7);
-		}
+		glutPostRedisplay();
 		break;
 	case 'h':
 		isModeDeformedSelection = isModeFixedSelecton ? false : true;
@@ -319,65 +314,26 @@ void keyboardFunc(unsigned char key, int x, int y)
 		else
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		cout << "Wireframe mode : " << isModeWireframe << endl;
+		glutPostRedisplay();
 		break;
 	case 'v':
 		isModeVolumePreserve = !isModeVolumePreserve;
 		cout << "Volume preserve mode : " << isModeVolumePreserve << endl;
+		glutPostRedisplay();
 		break;
 	case 'e':
 		isModeErase = true;
 		break;
 	case 'c':
 		isModeCurvature = !isModeCurvature;
+		glutPostRedisplay();
 		break;
 	default:
 		cout << "Unhandled key press " << key << "." << endl;
 	}
 
 	// this will refresh the screen so that the user sees the color change
-	glutPostRedisplay();
 }
-
-// This function is called whenever a "Special" key press is received.
-// Right now, it's handling the arrow keys.
-void specialFunc(int key, int x, int y)
-{
-	switch (key)
-	{
-	case GLUT_KEY_UP:
-		// add code to change light position
-		up_down = up_down + 0.5;
-		break;
-	case GLUT_KEY_DOWN:
-		// add code to change light position
-		up_down = up_down - 0.5;
-		break;
-	case GLUT_KEY_LEFT:
-		// add code to change light position
-		left_right = left_right - 0.5;
-		break;
-	case GLUT_KEY_RIGHT:
-		// add code to change light position
-		left_right = left_right + 0.5;
-		break;
-	}
-
-	// this will refresh the screen so that the user sees the light position
-	glutPostRedisplay();
-}
-
-// rotates shapes by 1 degree every 25 milliseconds
-void spinTimer(int value) {
-	if (spin) {
-		angle++;
-		if (angle > 360) {  // angles kept small for float precision issues
-			angle -= 360;
-		}
-	}
-	glutPostRedisplay();
-	glutTimerFunc(25, spinTimer, 0);
-}
-
 
 // Draw the axes
 void makeDisplayLists()
@@ -422,6 +378,7 @@ void renderLine(Vector3f color, Vector3f A, Vector3f B) {
 	glVertex3f(B.x(), B.y(), B.z());
 	glEnd();
 }
+
 // This function is responsible for displaying the object.
 void drawScene(void)
 {
@@ -463,50 +420,42 @@ void drawScene(void)
 	glEnable(GL_COLOR_MATERIAL);
 	int f_i = 0;
 
+	glBegin(GL_TRIANGLES);
 	for (auto f : mesh->faces()) {
-		glBegin(GL_TRIANGLES);
+		float dist = FLT_MAX;
+
+		for (auto v : mesh->vertices(f))
+			dist = std::min(dist, (mesh->position(v) - hoveredIntersectionPoint).squaredNorm());
+
 		for (auto v : mesh->vertices(f)) {
-			Vector3f p = mesh->position(v);
-			Vector3f n = mesh->compute_vertex_normal(v);
+			const Vector3f p = mesh->position(v);
+			const Vector3f n = mesh->compute_vertex_normal(v);
 
 			glNormal3d(n.x(), n.y(), n.z());
-			glColor3f(colors[f_i].x(), colors[f_i].y(), colors[f_i].z());
-			glVertex3d(p.x(), p.y(), p.z());
-		}
-		glEnd();
-		for (auto v : mesh->vertices(f)) {
-			Vector3f p = mesh->position(v);
 
-			glPushMatrix();
-
-			if (isModeCurvature) {
-				//Vector3f e1, e2, e3;
-				//deformableMesh->getCurvature(v.idx(), e1, e2, e3);
-				//renderLine(Vector3f(0,0,1), p, p + e1);
-				//renderLine(Vector3f(0,1,0), p, p + e2);
-				//renderLine(Vector3f(1,0,0), p, p + e3);
+			if (dist < selectionRadius*selectionRadius) {
+				glColor3f(1, 0, 1);
+			}
+			else if (find(deformedSelectedVertices.begin(), deformedSelectedVertices.end(), v.idx()) != deformedSelectedVertices.end()) {
+				glColor3f(0, 0, 1);
+			}
+			else if (find(fixedSelectedVertices.begin(), fixedSelectedVertices.end(), v.idx()) != fixedSelectedVertices.end()) {
+				glColor3f(0, 1, 0);
 			}
 			else {
-				float dist = (p - hoveredIntersectionPoint).norm();
-				if (dist < selectionRadius) {
-					glColor3f(1, 0, 1);
-				}
-				else if (find(deformedSelectedVertices.begin(), deformedSelectedVertices.end(), v.idx()) != deformedSelectedVertices.end()) {
-					glColor3f(0, 0, 1);
-				}
-				else if (find(fixedSelectedVertices.begin(), fixedSelectedVertices.end(), v.idx()) != fixedSelectedVertices.end()) {
-					glColor3f(0, 1, 0);
-				}
-				else {
-					glColor3f(1, 1, 1);
-				}
-				glTranslatef(p.x(), p.y(), p.z());
-				glutSolidSphere(0.02, 5, 5);
+				glColor3f(0.7, 0.7, 0.7);
 			}
-			
-			glPopMatrix();
+			glVertex3d(p.x(), p.y(), p.z());
 		}
-		f_i++;
+	}
+	glEnd();
+
+	for (auto v : mesh->vertices()) {
+		const Vector3f p = mesh->position(v);
+		glPushMatrix();
+		glTranslatef(p.x(), p.y(), p.z());
+		glutSolidSphere(0.02, 5, 5);
+		glPopMatrix();
 	}
 
 	glDisable(GL_COLOR_MATERIAL);
@@ -563,23 +512,20 @@ void loadInput(int argc, char **argv)
 	deformableMesh = new DeformableMesh(*m);
 
 	mesh = &deformableMesh->mesh;
-
-	for (int i = 0; i < mesh->n_faces(); i++) {
-		colors.push_back(Vector3f(0.7, 0.7, 0.7));
-	}
 }
 
 //Function to deform the vertices (DOM & JOHSI, yall do stuff here)
 void doMeshDeform(const Vector3f &angles) {
 	const VectorXf init = VectorXf::Zero(mesh->vertices_size(), 1);
 	deformableMesh->deform_mesh(fixedSelectedVertices, deformedSelectedVertices, init, (angles.x() * M_PI / 180), isModeVolumePreserve);
+
+	glutPostRedisplay();
 }
 
 // Main routine.
 // Set up OpenGL, define the callbacks and start the main loop
 int main(int argc, char** argv)
 {
-	cout << "Reading " << argv[1] << endl;
 	loadInput(argc,argv);
 	glutInit(&argc, argv);
 
@@ -595,14 +541,14 @@ int main(int argc, char** argv)
 	camera.SetDistance(10);
 	camera.SetCenter(Vector3f(0, 0, 0));
 
-	glutCreateWindow("Assignment 0");
+	glutCreateWindow("Deformers");
 
 	// Initialize OpenGL parameters.
 	initRendering();
 
 	// Set up callback functions for key presses
 	glutKeyboardFunc(keyboardFunc); // Handles "normal" ascii symbols
-	glutSpecialFunc(specialFunc);   // Handles "special" keyboard keys
+	//glutSpecialFunc(specialFunc);   // Handles "special" keyboard keys
 	glutKeyboardUpFunc(keyboardUpFunc);
 
 	 // Set up the callback function for resizing windows
@@ -610,8 +556,6 @@ int main(int argc, char** argv)
 
 	// Call this whenever window needs redrawing
 	glutDisplayFunc(drawScene);
-
-	glutTimerFunc(25, spinTimer, 0);
 
 	//Setup callback function for mouse & movement
 	glutMouseFunc(mouseFunc);

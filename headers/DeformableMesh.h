@@ -37,8 +37,8 @@ private:
 
 	void reconstruct_mesh( const vector<int> &fixed_ids );
 
-	void get_orthos(const vector<int>& fixed_ids, const vector<int>& handle_ids,
-		const VectorXf& theta_initial, const float theta_input, VectorXf& out);
+	VectorXf get_orthos(const vector<int>& fixed_ids, const vector<int>& handle_ids,
+		const VectorXf& theta_initial, const float theta_input);
 	void get_conformal(vector<int>& fixed_ids, vector<int>& handle_ids,
 		VectorXf& theta_initial, float theta_input, MatrixXf& out);
 

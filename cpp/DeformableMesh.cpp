@@ -52,7 +52,12 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh(*(new
 
 	for (auto v : _original.vertices()) {
 		const int vid = v.idx();
-		Matrix3f m_frame = Matrix3f::Identity();
+		//Matrix3f m_frame = Matrix3f::Identity();
+		Matrix3f m_frame;
+		m_frame <<
+			0, 0, 1,
+			1, 0, 0,
+			0, 1, 0;
 
 		float n1 = PV1[vid];
 		float n2 = PV2[vid];
@@ -97,21 +102,21 @@ void DeformableMesh::getCurvature(const int index, Vector3f &e1, Vector3f &e2, V
 void DeformableMesh::deform_mesh( const vector<int> &fixed_ids, const vector<int> &handle_ids,
 	const VectorXf &theta_initial, const float theta_input, const bool preserveVolume )
 {
-	MatrixX3f params(_original.vertices_size(), 3);
+	const int r = _original.vertices_size();
+	MatrixX3f params = MatrixX3f::Zero(r, 3);
 	const bool is_one_axis = true;
 
 	if (is_one_axis) {
-		VectorXf ortho;
+		VectorXf ortho(r, 1);
 
-		get_orthos(fixed_ids, handle_ids, theta_initial, theta_input, ortho);
-
-		params.col(0) = ortho;
+		ortho = get_orthos(fixed_ids, handle_ids, theta_initial, theta_input);
+		
+		params.col(0).array() = ortho;
 	}
 	else {
 		//get_conformal(params);
 	}
 
-	const int r = params.rows();
 	MatrixX4f quat(r, 4);
 	orthoParamsToQuarternion(params, quat);
 
@@ -121,17 +126,18 @@ void DeformableMesh::deform_mesh( const vector<int> &fixed_ids, const vector<int
 	}
 
 	reconstruct_mesh(fixed_ids);
-	
 
 	if (preserveVolume) {
 		vector<float> deformDepth;
 		this->computeInternalDistances(this->mesh, deformDepth);
 
 		for (auto v : mesh.vertices()) {
-			const Matrix3f scaleMatrix = get_scaling_matrix(v.idx(), localDepth[v.idx()], deformDepth[v.idx()]);
+			const int vid = v.idx();
+			const Matrix3f scaleMatrix = get_scaling_matrix(vid, localDepth[vid], deformDepth[vid]);
 
-			this->frame_rotated[v.idx()] = scaleMatrix * this->frame_rotated[v.idx()];
+			this->frame_rotated[vid] = scaleMatrix * this->frame_rotated[vid];
 		}
+
 		reconstruct_mesh(fixed_ids);
 	}	
 }
@@ -250,8 +256,8 @@ void DeformableMesh::get_conformal(vector<int>& fixed_ids, vector<int>& handle_i
 
 }
 
-void DeformableMesh::get_orthos(const vector<int>& fixed_ids, const vector<int>& handle_ids,
-	const VectorXf& theta_initial, const float theta_input, VectorXf& out)
+VectorXf DeformableMesh::get_orthos(const vector<int>& fixed_ids, const vector<int>& handle_ids,
+	const VectorXf& theta_initial, const float theta_input)
 {
 	typedef SparseMatrix<float> MatrixType;
 	typedef SparseLU< MatrixType > SolverType;
@@ -354,8 +360,7 @@ void DeformableMesh::get_orthos(const vector<int>& fixed_ids, const vector<int>&
 	//solve linear system
 	SolverType solver;
 	solver.compute(A);
-	out = solver.solve(b);
-
+	return solver.solve(b);
 }
 
 float DeformableMesh::get_h_field(const int vid, const float t) {
@@ -403,6 +408,11 @@ Matrix3f DeformableMesh::quaternion2rotationMatrix(const Vector4f &quaternion) {
 		2 * y*z - 2 * w*x,
 		1 - 2 * x*x - 2 * y*y;
 
+	if (isnan(rotationMatrix.squaredNorm())) {
+		cout << quaternion.transpose() << endl;
+		cout << rotationMatrix << endl;
+	}
+
 	return rotationMatrix;
 }
 
@@ -410,11 +420,17 @@ Matrix3f DeformableMesh::quaternion2rotationMatrix(const Vector4f &quaternion) {
 void DeformableMesh::orthoParamsToQuarternion(const MatrixX3f &orthoParams, MatrixX4f &out) {
 	for (int i = 0; i < orthoParams.rows(); i++) {
 		out.row(i) = this->orthoParamsToQuarternion((Vector3f)orthoParams.row(i));
+
+		if (isnan(out.row(i).squaredNorm()) || isinf(out.row(i).squaredNorm())) {
+			cout << "ortho (" << i << ") " << endl
+				<< orthoParams.row(i) << endl
+				<< out.row(i) << endl;
+		}
 	}
 }
 
 Vector4f DeformableMesh::orthoParamsToQuarternion(const Vector3f &orthoParams) {
-	const float theta1 = orthoParams[0] / 2;
+	const float theta1 = orthoParams[0] / 2.0f;
 	const float theta2 = orthoParams[1];
 	const float theta3 = orthoParams[2];
 
@@ -422,6 +438,10 @@ Vector4f DeformableMesh::orthoParamsToQuarternion(const Vector3f &orthoParams) {
 	const float y = sin(theta1) * sin(theta2) * cos(theta3);
 	const float z = sin(theta1) * cos(theta2);
 	const float w = cos(theta1);
+
+	if (isnan(w) || isnan(theta1) || isinf(w) || isinf(theta1)) {
+		cout << "w: " << w << " theta1: " << theta1 << endl;
+	}
 
 	return Vector4f(x, y, z, w);
 }
@@ -434,12 +454,12 @@ Vector4f DeformableMesh::conformalParamsToQuaternion(const Vector3f &conformalPa
 	const float n3 = conformalParams[2];
 
 	const float n_abs_sqr = conformalParams.squaredNorm();
-	const float denom = 1 / (n_abs_sqr + 4);
+	const float denom = 1.0f / (n_abs_sqr + 4.0f);
 
-	const float x = 4 * n1 * denom;
-	const float y = 4 * n2 * denom;
-	const float z = 4 * n3 * denom;
-	const float w = (4 - n_abs_sqr) * denom;
+	const float x = 4.0f * n1 * denom;
+	const float y = 4.0f * n2 * denom;
+	const float z = 4.0f * n3 * denom;
+	const float w = (4.0f - n_abs_sqr) * denom;
 
 	return Vector4f(x, y, z, w);
 }
@@ -450,24 +470,25 @@ float truncFloat(float x) {
 
 void DeformableMesh::computeInternalDistances(const Surface_mesh &compute_mesh, vector<float> &out) {
 
-	const float alpha = 0.5;
-	const float beta = 0.5;
+	const float ALPHA = 0.5f;
+	const float BETA  = 0.5f;
 	
 	for (auto v : _original.vertices()) {
-		Vector3f inwardsRay = -compute_mesh.compute_vertex_normal(v);
+		const int vid = v.idx();
+		const Vector3f inwardsRay = -compute_mesh.compute_vertex_normal(v);
 
-		const float r1 = truncFloat(1.0f / this->PV1[v.idx()]);
-		const float r2 = truncFloat(1.0f / this->PV2[v.idx()]);
+		const float r1 = truncFloat(1.0f / this->PV1[vid]);
+		const float r2 = truncFloat(1.0f / this->PV2[vid]);
 
-		Ray r(_original.position(v), inwardsRay);
+		const Ray r(_original.position(v), inwardsRay);
 		float dist;
 		TriangleIntersect::intersect(r, 0.01, dist, &mesh);
-		float phi_p = min(min(alpha*dist, beta*r1), beta*r2);
+		const float phi_p = min( min( ALPHA*dist, BETA*r1 ), BETA*r2 );
 
 		out.push_back(phi_p);
 	}
 }
 
 void DeformableMesh::resetMesh() {
-	mesh = _original;
+	mesh = *(new Surface_mesh(_original));
 }
