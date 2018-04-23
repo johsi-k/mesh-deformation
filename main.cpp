@@ -21,29 +21,27 @@ using namespace Eigen;
 Surface_mesh *mesh;
 DeformableMesh *deformableMesh;
 Vector3f hoveredIntersectionPoint = Vector3f(FLT_MAX, FLT_MAX, FLT_MAX);
+Matrix3f m_frame;
 
 //States to select triangles for mesh deformation or rotate them
 bool isModeDeformedSelection = false;
 bool isModeFixedSelecton = false;
 bool isModeErase = false;
 bool isModeLoop = false;
-bool isModeRotateX = false;
-bool isModeRotateY = false;
-bool isModeRotateZ = false;
 bool isModeWireframe = false;
 bool isModeVolumePreserve = true;
 bool isModeCurvature = false;
+bool isActivelyRotating = false;
 float selectionRadius = 0.2;
+string rotationMode = "X";
 
 //Angles for rotation
-int xAxisAngle = 0;
-int yAxisAngle = 0;
-int zAxisAngle = 0;
+int axisAngle = 0;
 
 //Vectors to store triangles currently listed for deformation
 vector<int> deformedSelectedVertices;
 vector<int> fixedSelectedVertices;
-void doMeshDeform(const Vector3f &angles);
+void doMeshDeform();
 
 // You will need more global variables to implement color and position changes
 int colorCounter = 0;
@@ -100,16 +98,16 @@ void displayString(float x, float y, string &text, Vector3f color) {
 bool isBacking = false;
 void loopAngleUpdate(int x) {
 
-	if (xAxisAngle == 180) {
+	if (axisAngle == 180) {
 		isBacking = true;
 	}
-	else if (xAxisAngle == -180) {
+	else if (axisAngle == -180) {
 		isBacking = false;
 	}
 
 	if (isModeLoop) {
-		xAxisAngle = isBacking ? xAxisAngle - 1 : xAxisAngle + 1;
-		doMeshDeform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
+		axisAngle = isBacking ? axisAngle - 1 : axisAngle + 1;
+		doMeshDeform();
 	}
 
 	glutTimerFunc(100, loopAngleUpdate, 0);
@@ -117,35 +115,14 @@ void loopAngleUpdate(int x) {
 
 //Function to monitor rotation
 void setAngleForRotation(int incr) {
-	if (isModeRotateX) {
-		xAxisAngle += incr;
+		
+	if (isActivelyRotating) {
+		axisAngle += incr;
 
-		if (xAxisAngle < -180) {
-			xAxisAngle += 360;
-		} else if (xAxisAngle > 180) {
-			xAxisAngle -= 360;
-		}
-	}
-	else if (isModeRotateY) {
-
-		yAxisAngle += incr;
-
-		if (yAxisAngle < -180) {
-			yAxisAngle += 360;
-		}
-		else if (yAxisAngle > 180) {
-			yAxisAngle -= 360;
-		}
-	}
-	else if (isModeRotateZ) {
-
-		zAxisAngle += incr;
-
-		if (zAxisAngle < -180) {
-			zAxisAngle += 360;
-		}
-		else if (zAxisAngle > 180) {
-			zAxisAngle -= 360;
+		if (axisAngle < -180) {
+			axisAngle += 360;
+		} else if (axisAngle > 180) {
+			axisAngle -= 360;
 		}
 	}
 	else {
@@ -155,7 +132,7 @@ void setAngleForRotation(int incr) {
 	}
 
 	if (!deformedSelectedVertices.empty() && !fixedSelectedVertices.empty())
-		doMeshDeform(Vector3f(xAxisAngle, yAxisAngle, zAxisAngle));
+		doMeshDeform();
 }
 
 //Scroll event handler
@@ -260,17 +237,12 @@ void keyboardUpFunc(unsigned char key, int x, int y) {
 	case 'f':
 		isModeFixedSelecton = false;
 		break;
-	case 'x':
-		isModeRotateX = false;
-		break;
-	case 'y':
-		isModeRotateY = false;
-		break;
-	case 'z':
-		isModeRotateZ = false;
-		break;
 	case 'e':
 		isModeErase = false;
+		break;
+	case 'q':
+		isActivelyRotating = false;
+		break;
 	}
 }
 
@@ -295,17 +267,32 @@ void keyboardFunc(unsigned char key, int x, int y)
 		isModeFixedSelecton = isModeDeformedSelection ? false : true;
 		break;
 	case 'x':
-		isModeRotateX = true;
+		m_frame(6) = 1;
+		m_frame(7) = 0;
+		m_frame(8) = 0;
+		rotationMode = "X";
+		doMeshDeform();
 		break;
 	case 'y':
-		isModeRotateY = true;
+		m_frame(6) = 0;
+		m_frame(7) = 1;
+		m_frame(8) = 0;
+		rotationMode = "Y";
+		doMeshDeform();
 		break;
 	case 'z':
-		isModeRotateZ = true;
+		m_frame(6) = 0;
+		m_frame(7) = 0;
+		m_frame(8) = 1;
+		rotationMode = "Z";
+		doMeshDeform();
 		break;
 	case 'l':
 		isModeLoop = !isModeLoop;
 		cout << "Loop Mode : " << isModeLoop << endl;
+		break;
+	case 'q':
+		isActivelyRotating = true;
 		break;
 	case 'w':
 		isModeWireframe = !isModeWireframe;
@@ -422,10 +409,6 @@ void drawScene(void)
 
 	glBegin(GL_TRIANGLES);
 	for (auto f : mesh->faces()) {
-		float dist = FLT_MAX;
-
-		for (auto v : mesh->vertices(f))
-			dist = std::min(dist, (mesh->position(v) - hoveredIntersectionPoint).squaredNorm());
 
 		for (auto v : mesh->vertices(f)) {
 			const Vector3f p = mesh->position(v);
@@ -433,7 +416,7 @@ void drawScene(void)
 
 			glNormal3d(n.x(), n.y(), n.z());
 
-			if (dist < selectionRadius*selectionRadius) {
+			if ((mesh->position(v) - hoveredIntersectionPoint).squaredNorm() < selectionRadius*selectionRadius) {
 				glColor3f(1, 0, 1);
 			}
 			else if (find(deformedSelectedVertices.begin(), deformedSelectedVertices.end(), v.idx()) != deformedSelectedVertices.end()) {
@@ -454,15 +437,27 @@ void drawScene(void)
 		const Vector3f p = mesh->position(v);
 		glPushMatrix();
 		glTranslatef(p.x(), p.y(), p.z());
+		if ((mesh->position(v) - hoveredIntersectionPoint).squaredNorm() < selectionRadius*selectionRadius) {
+			glColor3f(1, 0, 1);
+		}
+		else if (find(deformedSelectedVertices.begin(), deformedSelectedVertices.end(), v.idx()) != deformedSelectedVertices.end()) {
+			glColor3f(0, 0, 1);
+		}
+		else if (find(fixedSelectedVertices.begin(), fixedSelectedVertices.end(), v.idx()) != fixedSelectedVertices.end()) {
+			glColor3f(0, 1, 0);
+		}
+		else {
+			glColor3f(0.7, 0.7, 0.7);
+		}
+		glVertex3d(p.x(), p.y(), p.z());
 		glutSolidSphere(0.02, 5, 5);
 		glPopMatrix();
 	}
 
 	glDisable(GL_COLOR_MATERIAL);
 
-	displayString(-0.9, 0.85, "X " + to_string(xAxisAngle),Vector3f(1,1,1));
-	displayString(-0.9, 0.75, "Y " + to_string(yAxisAngle),Vector3f(1,1,1));
-	displayString(-0.9, 0.65, "Z " + to_string(zAxisAngle),Vector3f(1,1,1));
+	displayString(-0.9, 0.85, "Axis " + rotationMode, Vector3f(1,1,1));
+	displayString(-0.9, 0.75, "Angle " + to_string(axisAngle),Vector3f(1,1,1));
 	displayString(-0.9, -0.75, "Handles " + to_string(deformedSelectedVertices.size()),Vector3f(0,0,1));
 	displayString(-0.9, -0.85, "Fixed " + to_string(fixedSelectedVertices.size()),Vector3f(0,1,0));
 
@@ -511,13 +506,18 @@ void loadInput(int argc, char **argv)
 	m->read(argv[1]);
 	deformableMesh = new DeformableMesh(*m);
 
+	m_frame <<
+		0, 0, 1,
+		1, 0, 0,
+		0, 1, 0;
+
 	mesh = &deformableMesh->mesh;
 }
 
 //Function to deform the vertices (DOM & JOHSI, yall do stuff here)
-void doMeshDeform(const Vector3f &angles) {
+void doMeshDeform() {
 	const VectorXf init = VectorXf::Zero(mesh->vertices_size(), 1);
-	deformableMesh->deform_mesh(fixedSelectedVertices, deformedSelectedVertices, init, (angles.x() * M_PI / 180), isModeVolumePreserve);
+	deformableMesh->deform_mesh(fixedSelectedVertices, deformedSelectedVertices, init, (axisAngle * M_PI / 180), isModeVolumePreserve, m_frame);
 
 	glutPostRedisplay();
 }

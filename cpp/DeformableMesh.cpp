@@ -57,7 +57,7 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh(*(new
 		m_frame <<
 			0, 0, 1,
 			1, 0, 0,
-			0, 1, 0;
+			1, 0, 0;
 
 		float n1 = PV1[vid];
 		float n2 = PV2[vid];
@@ -100,7 +100,7 @@ void DeformableMesh::getCurvature(const int index, Vector3f &e1, Vector3f &e2, V
 }
 
 void DeformableMesh::deform_mesh( const vector<int> &fixed_ids, const vector<int> &handle_ids,
-	const VectorXf &theta_initial, const float theta_input, const bool preserveVolume )
+	const VectorXf &theta_initial, const float theta_input, const bool preserveVolume, const Matrix3f m_frame)
 {
 	const int r = _original.vertices_size();
 	MatrixX3f params = MatrixX3f::Zero(r, 3);
@@ -120,7 +120,11 @@ void DeformableMesh::deform_mesh( const vector<int> &fixed_ids, const vector<int
 	MatrixX4f quat(r, 4);
 	orthoParamsToQuarternion(params, quat);
 
+	cout << "m_frame" << endl;
+	cout << m_frame << endl;
+
 	for (int i = 0; i < _original.vertices_size(); i++) {
+		this->frame_origin[i] = m_frame;
 		const Matrix3f rotationMatrix = quaternion2rotationMatrix(quat.row(i));
 		this->frame_rotated[i] = rotationMatrix * this->frame_origin[i];
 	}

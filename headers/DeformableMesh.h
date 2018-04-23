@@ -20,7 +20,7 @@ public:
 	Surface_mesh &mesh;
 
 	void deform_mesh(const vector<int> &fixed_ids, const vector<int> &handle_ids, 
-		const VectorXf &theta_initial, const float theta_input, const bool preserveVolume);
+		const VectorXf &theta_initial, const float theta_input, const bool preserveVolume, const Matrix3f m_frame);
 	void resetMesh();
 	void getCurvature(const int index, Vector3f &e1, Vector3f &e2, Vector3f &e3);
 
