@@ -485,7 +485,7 @@ void DeformableMesh::computeInternalDistances(const Surface_mesh &compute_mesh, 
 		const Ray r(_original.position(v), inwardsRay);
 		Vector3f intersectionPoint;
 		TriangleIntersect::intersect(r, 0.01, intersectionPoint, &mesh);
-		float dist = (_original.position(v) - intersectionPoint).norm();
+		float dist = (compute_mesh.position(v) - intersectionPoint).norm();
 		cout << dist << endl;
 		const float phi_p = min( min( ALPHA*dist, BETA*r1 ), BETA*r2 );
 
