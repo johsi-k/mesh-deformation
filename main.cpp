@@ -267,23 +267,26 @@ void keyboardFunc(unsigned char key, int x, int y)
 		isModeFixedSelecton = isModeDeformedSelection ? false : true;
 		break;
 	case 'x':
-		m_frame(2) = 1;
-		m_frame(5) = 0;
-		m_frame(8) = 0;
+		m_frame <<
+			0, 1, 0,
+			0, 0, 1,
+			1, 0, 0;
 		rotationMode = "X";
 		doMeshDeform();
 		break;
 	case 'y':
-		m_frame(2) = 0;
-		m_frame(5) = 1;
-		m_frame(8) = 0;
+		m_frame <<
+			0, 0, 1,
+			1, 0, 0,
+			0, 1, 0;
 		rotationMode = "Y";
 		doMeshDeform();
 		break;
 	case 'z':
-		m_frame(2) = 0;
-		m_frame(5) = 0;
-		m_frame(8) = 1;
+		m_frame <<
+			1, 0, 0,
+			0, 1, 0,
+			0, 0, 1;
 		rotationMode = "Z";
 		doMeshDeform();
 		break;

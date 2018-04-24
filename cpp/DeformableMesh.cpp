@@ -57,7 +57,7 @@ DeformableMesh::DeformableMesh(Surface_mesh &mesh) : _original(mesh), mesh(*(new
 		m_frame <<
 			0, 0, 1,
 			1, 0, 0,
-			1, 0, 0;
+			0, 1, 0;
 
 		float n1 = PV1[vid];
 		float n2 = PV2[vid];
