@@ -154,8 +154,8 @@ void mouseWheel(int button, int dir, int x, int y) {
 void passiveMouseFunc(int x, int y) {
 
 	Ray r = camera.generateRay(x, y);
-	float dist;
-	hoveredIntersectionPoint = TriangleIntersect::intersect(r, 0.001,dist,mesh);
+	Vector3f intersectionPoint;
+	hoveredIntersectionPoint = TriangleIntersect::intersect(r, 0.001, intersectionPoint,mesh);
 
 	for (auto f : mesh->faces()) {
 

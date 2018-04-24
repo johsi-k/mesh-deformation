@@ -1,6 +1,6 @@
 #include "../headers/TriangleIntersect.h"
 
-Vector3f TriangleIntersect::intersect(Ray r, float tmin, float &distance, Surface_mesh *mesh) {
+Vector3f TriangleIntersect::intersect(Ray r, float tmin, Vector3f &intersectionPoint, Surface_mesh *mesh) {
 	int index = INT_MAX;
 	float t = FLT_MAX;
 
@@ -41,7 +41,7 @@ Vector3f TriangleIntersect::intersect(Ray r, float tmin, float &distance, Surfac
 		}
 	}
 
-	distance = r.pointAtParameter(t).norm();
+	intersectionPoint = r.pointAtParameter(t);
 	if (index < INT_MAX)
 		return r.pointAtParameter(t);
 	else

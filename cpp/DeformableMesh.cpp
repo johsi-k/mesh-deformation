@@ -120,9 +120,6 @@ void DeformableMesh::deform_mesh( const vector<int> &fixed_ids, const vector<int
 	MatrixX4f quat(r, 4);
 	orthoParamsToQuarternion(params, quat);
 
-	cout << "m_frame" << endl;
-	cout << m_frame << endl;
-
 	for (int i = 0; i < _original.vertices_size(); i++) {
 		this->frame_origin[i] = m_frame;
 		const Matrix3f rotationMatrix = quaternion2rotationMatrix(quat.row(i));
@@ -477,6 +474,7 @@ void DeformableMesh::computeInternalDistances(const Surface_mesh &compute_mesh, 
 	const float ALPHA = 0.5f;
 	const float BETA  = 0.5f;
 	
+	cout << "deformed" << endl;
 	for (auto v : _original.vertices()) {
 		const int vid = v.idx();
 		const Vector3f inwardsRay = -compute_mesh.compute_vertex_normal(v);
@@ -485,8 +483,10 @@ void DeformableMesh::computeInternalDistances(const Surface_mesh &compute_mesh, 
 		const float r2 = truncFloat(1.0f / this->PV2[vid]);
 
 		const Ray r(_original.position(v), inwardsRay);
-		float dist;
-		TriangleIntersect::intersect(r, 0.01, dist, &mesh);
+		Vector3f intersectionPoint;
+		TriangleIntersect::intersect(r, 0.01, intersectionPoint, &mesh);
+		float dist = (_original.position(v) - intersectionPoint).norm();
+		cout << dist << endl;
 		const float phi_p = min( min( ALPHA*dist, BETA*r1 ), BETA*r2 );
 
 		out.push_back(phi_p);
